@@ -315,7 +315,7 @@ Dtype Blob<Dtype>::sumsq_diff() const {
   case SyncedMemory::UNINITIALIZED:
     return 0;
   default:
-    LOG(FATAL) << "Unknown SyncedMemory head state: " << data_->head();
+    LOG(FATAL) << "Unknown SyncedMemory head state: " << diff_->head();
   }
   return sumsq;
 }
