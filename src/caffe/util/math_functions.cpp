@@ -2,6 +2,7 @@
 #include <boost/random.hpp>
 
 #include <limits>
+#include <complex>
 
 #include "caffe/common.hpp"
 #include "caffe/util/math_functions.hpp"
@@ -31,6 +32,30 @@ void caffe_cpu_gemm<double>(const CBLAS_TRANSPOSE TransA,
       ldb, beta, C, N);
 }
 
+template<>
+void caffe_cpu_gemm<std::complex<float> >(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const std::complex<float> alpha, const std::complex<float>* A,
+    const std::complex<float>* B, const std::complex<float> beta,
+    std::complex<float>* C) {
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cblas_cgemm(CblasRowMajor, TransA, TransB, M, N, K, &alpha, A, lda, B,
+      ldb, &beta, C, N);
+}
+
+template<>
+void caffe_cpu_gemm<std::complex<double> >(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const std::complex<double> alpha, const std::complex<double>* A,
+    const std::complex<double>* B, const std::complex<double> beta,
+    std::complex<double>* C) {
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cblas_zgemm(CblasRowMajor, TransA, TransB, M, N, K, &alpha, A, lda, B,
+      ldb, &beta, C, N);
+}
+
 template <>
 void caffe_cpu_gemv<float>(const CBLAS_TRANSPOSE TransA, const int M,
     const int N, const float alpha, const float* A, const float* x,
@@ -46,12 +71,38 @@ void caffe_cpu_gemv<double>(const CBLAS_TRANSPOSE TransA, const int M,
 }
 
 template <>
+void caffe_cpu_gemv<std::complex<float> >(const CBLAS_TRANSPOSE TransA, const int M,
+    const int N, const std::complex<float> alpha, const std::complex<float>* A,
+    const std::complex<float>* x,
+    const std::complex<float> beta, std::complex<float>* y) {
+  cblas_cgemv(CblasRowMajor, TransA, M, N, &alpha, A, N, x, 1, &beta, y, 1);
+}
+
+template <>
+void caffe_cpu_gemv<std::complex<double> >(const CBLAS_TRANSPOSE TransA, const int M,
+    const int N, const std::complex<double> alpha, const std::complex<double>* A,
+    const std::complex<double>* x,
+    const std::complex<double> beta, std::complex<double>* y) {
+  cblas_zgemv(CblasRowMajor, TransA, M, N, &alpha, A, N, x, 1, &beta, y, 1);
+}
+
+template <>
 void caffe_axpy<float>(const int N, const float alpha, const float* X,
     float* Y) { cblas_saxpy(N, alpha, X, 1, Y, 1); }
 
 template <>
 void caffe_axpy<double>(const int N, const double alpha, const double* X,
     double* Y) { cblas_daxpy(N, alpha, X, 1, Y, 1); }
+
+template <>
+void caffe_axpy<std::complex<float> >(const int N, const std::complex<float> alpha,
+    const std::complex<float>* X,
+    std::complex<float>* Y) { cblas_caxpy(N, &alpha, X, 1, Y, 1); }
+
+template <>
+void caffe_axpy<std::complex<double> >(const int N, const std::complex<double> alpha,
+    const std::complex<double>* X,
+    std::complex<double>* Y) { cblas_zaxpy(N, &alpha, X, 1, Y, 1); }
 
 template <typename Dtype>
 void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
@@ -69,6 +120,20 @@ template void caffe_set<float>(const int N, const float alpha, float* Y);
 template void caffe_set<double>(const int N, const double alpha, double* Y);
 
 template <>
+void caffe_set<std::complex<float> >(const int N, const std::complex<float> alpha, std::complex<float>* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = alpha;
+  }
+}
+
+template <>
+void caffe_set<std::complex<double> >(const int N, const std::complex<double> alpha, std::complex<double>* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] = alpha;
+  }
+}
+
+template <>
 void caffe_add_scalar(const int N, const float alpha, float* Y) {
   for (int i = 0; i < N; ++i) {
     Y[i] += alpha;
@@ -81,6 +146,21 @@ void caffe_add_scalar(const int N, const double alpha, double* Y) {
     Y[i] += alpha;
   }
 }
+
+template <>
+void caffe_add_scalar(const int N, const std::complex<float> alpha, std::complex<float>* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] += alpha;
+  }
+}
+
+template <>
+void caffe_add_scalar(const int N, const std::complex<double> alpha, std::complex<double>* Y) {
+  for (int i = 0; i < N; ++i) {
+    Y[i] += alpha;
+  }
+}
+
 
 template <typename Dtype>
 void caffe_copy(const int N, const Dtype* X, Dtype* Y) {
@@ -103,6 +183,10 @@ template void caffe_copy<unsigned int>(const int N, const unsigned int* X,
     unsigned int* Y);
 template void caffe_copy<float>(const int N, const float* X, float* Y);
 template void caffe_copy<double>(const int N, const double* X, double* Y);
+template void caffe_copy<std::complex<float> >(const int N, const std::complex<float>* X,
+    std::complex<float>* Y);
+template void caffe_copy<std::complex<double> >(const int N, const std::complex<double>* X,
+    std::complex<double>* Y);
 
 template <>
 void caffe_scal<float>(const int N, const float alpha, float *X) {
@@ -112,6 +196,16 @@ void caffe_scal<float>(const int N, const float alpha, float *X) {
 template <>
 void caffe_scal<double>(const int N, const double alpha, double *X) {
   cblas_dscal(N, alpha, X, 1);
+}
+
+template <>
+void caffe_scal<std::complex<float> >(const int N, const std::complex<float> alpha, std::complex<float> *X) {
+  cblas_cscal(N, &alpha, X, 1);
+}
+
+template <>
+void caffe_scal<std::complex<double> >(const int N, const std::complex<double> alpha, std::complex<double> *X) {
+  cblas_zscal(N, &alpha, X, 1);
 }
 
 template <>
@@ -127,6 +221,18 @@ void caffe_cpu_axpby<double>(const int N, const double alpha, const double* X,
 }
 
 template <>
+void caffe_cpu_axpby<std::complex<float> >(const int N, const std::complex<float> alpha, const std::complex<float>* X,
+                            const std::complex<float> beta, std::complex<float>* Y) {
+  cblas_caxpby(N, alpha, X, 1, beta, Y, 1);
+}
+
+template <>
+void caffe_cpu_axpby<std::complex<double> >(const int N, const std::complex<double> alpha, const std::complex<double>* X,
+                            const std::complex<double> beta, std::complex<double>* Y) {
+  cblas_zaxpby(N, alpha, X, 1, beta, Y, 1);
+}
+
+template <>
 void caffe_add<float>(const int n, const float* a, const float* b,
     float* y) {
   vsAdd(n, a, b, y);
@@ -136,6 +242,18 @@ template <>
 void caffe_add<double>(const int n, const double* a, const double* b,
     double* y) {
   vdAdd(n, a, b, y);
+}
+
+template <>
+void caffe_add<std::complex<float> >(const int n, const std::complex<float>* a, const std::complex<float>* b,
+    std::complex<float>* y) {
+  vcAdd(n, a, b, y);
+}
+
+template <>
+void caffe_add<std::complex<double> >(const int n, const std::complex<double>* a, const std::complex<double>* b,
+    std::complex<double>* y) {
+  vzAdd(n, a, b, y);
 }
 
 template <>
@@ -151,6 +269,18 @@ void caffe_sub<double>(const int n, const double* a, const double* b,
 }
 
 template <>
+void caffe_sub<std::complex<float> >(const int n, const std::complex<float>* a, const std::complex<float>* b,
+    std::complex<float>* y) {
+  vcSub(n, a, b, y);
+}
+
+template <>
+void caffe_sub<std::complex<double> >(const int n, const std::complex<double>* a, const std::complex<double>* b,
+    std::complex<double>* y) {
+  vzSub(n, a, b, y);
+}
+
+template <>
 void caffe_mul<float>(const int n, const float* a, const float* b,
     float* y) {
   vsMul(n, a, b, y);
@@ -160,6 +290,18 @@ template <>
 void caffe_mul<double>(const int n, const double* a, const double* b,
     double* y) {
   vdMul(n, a, b, y);
+}
+
+template <>
+void caffe_mul<std::complex<float> >(const int n, const std::complex<float>* a, const std::complex<float>* b,
+    std::complex<float>* y) {
+  vcMul(n, a, b, y);
+}
+
+template <>
+void caffe_mul<std::complex<double> >(const int n, const std::complex<double>* a, const std::complex<double>* b,
+    std::complex<double>* y) {
+  vzMul(n, a, b, y);
 }
 
 template <>
@@ -175,6 +317,18 @@ void caffe_div<double>(const int n, const double* a, const double* b,
 }
 
 template <>
+void caffe_div<std::complex<float> >(const int n, const std::complex<float>* a, const std::complex<float>* b,
+    std::complex<float>* y) {
+  vcDiv(n, a, b, y);
+}
+
+template <>
+void caffe_div<std::complex<double> >(const int n, const std::complex<double>* a, const std::complex<double>* b,
+    std::complex<double>* y) {
+  vzDiv(n, a, b, y);
+}
+
+template <>
 void caffe_powx<float>(const int n, const float* a, const float b,
     float* y) {
   vsPowx(n, a, b, y);
@@ -184,6 +338,18 @@ template <>
 void caffe_powx<double>(const int n, const double* a, const double b,
     double* y) {
   vdPowx(n, a, b, y);
+}
+
+template <>
+void caffe_powx<std::complex<float> >(const int n, const std::complex<float>* a, const std::complex<float> b,
+    std::complex<float>* y) {
+  vcPowx(n, a, b, y);
+}
+
+template <>
+void caffe_powx<std::complex<double> >(const int n, const std::complex<double>* a, const std::complex<double> b,
+    std::complex<double>* y) {
+  vzPowx(n, a, b, y);
 }
 
 template <>
@@ -197,6 +363,16 @@ void caffe_sqr<double>(const int n, const double* a, double* y) {
 }
 
 template <>
+void caffe_sqr<std::complex<float> >(const int n, const std::complex<float>* a, std::complex<float>* y) {
+  vcSqr(n, a, y);
+}
+
+template <>
+void caffe_sqr<std::complex<double> >(const int n, const std::complex<double>* a, std::complex<double>* y) {
+  vzSqr(n, a, y);
+}
+
+template <>
 void caffe_exp<float>(const int n, const float* a, float* y) {
   vsExp(n, a, y);
 }
@@ -204,6 +380,16 @@ void caffe_exp<float>(const int n, const float* a, float* y) {
 template <>
 void caffe_exp<double>(const int n, const double* a, double* y) {
   vdExp(n, a, y);
+}
+
+template <>
+void caffe_exp<std::complex<float> >(const int n, const std::complex<float>* a, std::complex<float>* y) {
+  vcExp(n, a, y);
+}
+
+template <>
+void caffe_exp<std::complex<double> >(const int n, const std::complex<double>* a, std::complex<double>* y) {
+  vzExp(n, a, y);
 }
 
 template <>
@@ -217,6 +403,16 @@ void caffe_log<double>(const int n, const double* a, double* y) {
 }
 
 template <>
+void caffe_log<std::complex<float> >(const int n, const std::complex<float>* a, std::complex<float>* y) {
+  vcLn(n, a, y);
+}
+
+template <>
+void caffe_log<std::complex<double> >(const int n, const std::complex<double>* a, std::complex<double>* y) {
+  vzLn(n, a, y);
+}
+
+template <>
 void caffe_abs<float>(const int n, const float* a, float* y) {
     vsAbs(n, a, y);
 }
@@ -224,6 +420,16 @@ void caffe_abs<float>(const int n, const float* a, float* y) {
 template <>
 void caffe_abs<double>(const int n, const double* a, double* y) {
     vdAbs(n, a, y);
+}
+
+template <>
+void caffe_abs<std::complex<float> >(const int n, const std::complex<float>* a, std::complex<float>* y) {
+    vcAbs(n, a, y);
+}
+
+template <>
+void caffe_abs<std::complex<double> >(const int n, const std::complex<double>* a, std::complex<double>* y) {
+    vzAbs(n, a, y);
 }
 
 unsigned int caffe_rng_rand() {
@@ -263,13 +469,43 @@ template
 void caffe_rng_uniform<double>(const int n, const double a, const double b,
                                double* r);
 
+template <>
+void caffe_rng_uniform<std::complex<float> >(const int n, const std::complex<float> a, const std::complex<float> b, std::complex<float>* r) {
+  CHECK_GE(n, 0);
+  CHECK(r);
+  CHECK_EQ(std::imag(a), 0);
+  CHECK_EQ(std::imag(b), 0);
+  CHECK_LE(std::real(a), std::real(b));
+  boost::uniform_real<float> random_distribution(std::real(a), caffe_nextafter<float>(std::real(b)));
+  boost::variate_generator<caffe::rng_t*, boost::uniform_real<float> >
+      variate_generator(caffe_rng(), random_distribution);
+  for (int i = 0; i < n; ++i) {
+    r[i] = variate_generator();
+  }
+}
+
+template <>
+void caffe_rng_uniform<std::complex<double> >(const int n, const std::complex<double> a, const std::complex<double> b, std::complex<double>* r) {
+  CHECK_GE(n, 0);
+  CHECK(r);
+  CHECK_EQ(std::imag(a), 0);
+  CHECK_EQ(std::imag(b), 0);
+  CHECK_LE(std::real(a), std::real(b));
+  boost::uniform_real<double> random_distribution(std::real(a), caffe_nextafter<double>(std::real(b)));
+  boost::variate_generator<caffe::rng_t*, boost::uniform_real<double> >
+      variate_generator(caffe_rng(), random_distribution);
+  for (int i = 0; i < n; ++i) {
+    r[i] = variate_generator();
+  }
+}
+
 template <typename Dtype>
-void caffe_rng_gaussian(const int n, const Dtype a,
+void caffe_rng_gaussian(const int n, const Dtype mu,
                         const Dtype sigma, Dtype* r) {
   CHECK_GE(n, 0);
   CHECK(r);
   CHECK_GT(sigma, 0);
-  boost::normal_distribution<Dtype> random_distribution(a, sigma);
+  boost::normal_distribution<Dtype> random_distribution(mu, sigma);
   boost::variate_generator<caffe::rng_t*, boost::normal_distribution<Dtype> >
       variate_generator(caffe_rng(), random_distribution);
   for (int i = 0; i < n; ++i) {
@@ -284,6 +520,49 @@ void caffe_rng_gaussian<float>(const int n, const float mu,
 template
 void caffe_rng_gaussian<double>(const int n, const double mu,
                                 const double sigma, double* r);
+
+template <>
+void caffe_rng_gaussian<std::complex<float> >(const int n, const std::complex<float> mu,
+                               const std::complex<float> sigma, std::complex<float>* r) {
+  CHECK_GE(n, 0);
+  CHECK(r);
+  CHECK_GT(std::real(sigma), 0);
+  CHECK_EQ(std::imag(sigma), 0);
+
+  boost::normal_distribution<float> random_distribution_real(std::real(mu), std::real(sigma));
+  boost::variate_generator<caffe::rng_t*, boost::normal_distribution<float> >
+      variate_generator_real(caffe_rng(), random_distribution_real);
+
+  boost::normal_distribution<float> random_distribution_imag(std::imag(mu), std::real(sigma));
+  boost::variate_generator<caffe::rng_t*, boost::normal_distribution<float> >
+      variate_generator_imag(caffe_rng(), random_distribution_imag);
+
+  for (int i = 0; i < n; ++i) {
+    r[i] = std::complex<float>(variate_generator_real(), variate_generator_imag());
+  }
+}
+
+template <>
+void caffe_rng_gaussian<std::complex<double> >(const int n, const std::complex<double> mu,
+                               const std::complex<double> sigma, std::complex<double>* r) {
+  CHECK_GE(n, 0);
+  CHECK(r);
+  CHECK_GT(std::real(sigma), 0);
+  CHECK_EQ(std::imag(sigma), 0);
+
+  boost::normal_distribution<double> random_distribution_real(std::real(mu), std::real(sigma));
+  boost::variate_generator<caffe::rng_t*, boost::normal_distribution<double> >
+      variate_generator_real(caffe_rng(), random_distribution_real);
+
+  boost::normal_distribution<double> random_distribution_imag(std::imag(mu), std::real(sigma));
+  boost::variate_generator<caffe::rng_t*, boost::normal_distribution<double> >
+      variate_generator_imag(caffe_rng(), random_distribution_imag);
+
+  for (int i = 0; i < n; ++i) {
+    r[i] = std::complex<double>(variate_generator_real(), variate_generator_imag());
+  }
+}
+
 
 template <typename Dtype>
 void caffe_rng_bernoulli(const int n, const Dtype p, int* r) {
@@ -304,6 +583,21 @@ void caffe_rng_bernoulli<double>(const int n, const double p, int* r);
 
 template
 void caffe_rng_bernoulli<float>(const int n, const float p, int* r);
+
+template <>
+void caffe_rng_bernoulli<std::complex<float> >(const int n, const std::complex<float> p, int* r) {
+  CHECK_EQ(std::imag(p), 0);
+
+  caffe_rng_bernoulli<float>(n, std::real(p), r);
+}
+
+template <>
+void caffe_rng_bernoulli<std::complex<double> >(const int n, const std::complex<double> p, int* r) {
+  CHECK_EQ(std::imag(p), 0);
+
+  caffe_rng_bernoulli<double>(n, std::real(p), r);
+}
+
 
 template <typename Dtype>
 void caffe_rng_bernoulli(const int n, const Dtype p, unsigned int* r) {
@@ -326,27 +620,75 @@ template
 void caffe_rng_bernoulli<float>(const int n, const float p, unsigned int* r);
 
 template <>
+void caffe_rng_bernoulli<std::complex<float> >(const int n, const std::complex<float> p, unsigned int* r) {
+  CHECK_EQ(std::imag(p), 0);
+
+  caffe_rng_bernoulli<float>(n, std::real(p), r);
+}
+
+template <>
+void caffe_rng_bernoulli<std::complex<double> >(const int n, const std::complex<double> p, unsigned int* r) {
+  CHECK_EQ(std::imag(p), 0);
+
+  caffe_rng_bernoulli<double>(n, std::real(p), r);
+}
+
+template <>
 float caffe_cpu_strided_dot<float>(const int n, const float* x, const int incx,
-    const float* y, const int incy) {
+    const float* y, const int incy, const bool conj_x) {
   return cblas_sdot(n, x, incx, y, incy);
 }
 
 template <>
 double caffe_cpu_strided_dot<double>(const int n, const double* x,
-    const int incx, const double* y, const int incy) {
+    const int incx, const double* y, const int incy, const bool conj_x) {
   return cblas_ddot(n, x, incx, y, incy);
 }
 
+template <>
+std::complex<float> caffe_cpu_strided_dot<std::complex<float> >(const int n, const std::complex<float>* x, const int incx,
+    const std::complex<float>* y, const int incy, const bool conj_x) {
+  std::complex<float> result;
+  if(conj_x) {
+    cblas_cdotc_sub(n, x, incx, y, incy, &result);
+  }
+  else {
+    cblas_cdotu_sub(n, x, incx, y, incy, &result);
+  }
+  return result;
+}
+
+template <>
+std::complex<double> caffe_cpu_strided_dot<std::complex<double> >(const int n, const std::complex<double>* x, const int incx,
+    const std::complex<double>* y, const int incy, const bool conj_x) {
+  std::complex<double> result;
+  if(conj_x) {
+    cblas_zdotc_sub(n, x, incx, y, incy, &result);
+  }
+  else {
+    cblas_zdotu_sub(n, x, incx, y, incy, &result);
+  }
+  return result;
+}
+
 template <typename Dtype>
-Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
-  return caffe_cpu_strided_dot(n, x, 1, y, 1);
+Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y, const bool conj_x) {
+  return caffe_cpu_strided_dot(n, x, 1, y, 1, conj_x);
 }
 
 template
-float caffe_cpu_dot<float>(const int n, const float* x, const float* y);
+float caffe_cpu_dot<float>(const int n, const float* x, const float* y, const bool conj_x);
 
 template
-double caffe_cpu_dot<double>(const int n, const double* x, const double* y);
+double caffe_cpu_dot<double>(const int n, const double* x, const double* y, const bool conj_x);
+
+template
+std::complex<float> caffe_cpu_dot<std::complex<float> >(const int n, const std::complex<float>* x, const std::complex<float>* y,
+    const bool conj_x);
+
+template
+std::complex<double> caffe_cpu_dot<std::complex<double> >(const int n, const std::complex<double>* x, const std::complex<double>* y,
+    const bool conj_x);
 
 template <>
 float caffe_cpu_asum<float>(const int n, const float* x) {
@@ -356,6 +698,18 @@ float caffe_cpu_asum<float>(const int n, const float* x) {
 template <>
 double caffe_cpu_asum<double>(const int n, const double* x) {
   return cblas_dasum(n, x, 1);
+}
+
+template <>
+std::complex<float> caffe_cpu_asum<std::complex<float> >(const int n, const std::complex<float>* x) {
+  std::complex<float> result = cblas_scasum(n, x, 1);
+  return result;
+}
+
+template <>
+std::complex<double> caffe_cpu_asum<std::complex<double> >(const int n, const std::complex<double>* x) {
+  std::complex<double> result = cblas_dzasum(n, x, 1);
+  return result;
 }
 
 template <>
@@ -370,6 +724,20 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
                              double* y) {
   cblas_dcopy(n, x, 1, y, 1);
   cblas_dscal(n, alpha, y, 1);
+}
+
+template <>
+void caffe_cpu_scale<std::complex<float> >(const int n, const std::complex<float> alpha, const std::complex<float> *x,
+                                           std::complex<float>* y) {
+  cblas_ccopy(n, x, 1, y, 1);
+  cblas_cscal(n, &alpha, y, 1);
+}
+
+template <>
+void caffe_cpu_scale<std::complex<double> >(const int n, const std::complex<double> alpha, const std::complex<double> *x,
+                                           std::complex<double>* y) {
+  cblas_zcopy(n, x, 1, y, 1);
+  cblas_zscal(n, &alpha, y, 1);
 }
 
 }  // namespace caffe

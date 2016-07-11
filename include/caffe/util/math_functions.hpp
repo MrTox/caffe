@@ -95,11 +95,11 @@ template <typename Dtype>
 void caffe_abs(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype>
-Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
+Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y, const bool conj_x = true);
 
 template <typename Dtype>
 Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
-    const Dtype* y, const int incy);
+    const Dtype* y, const int incy, const bool conj_x = true);
 
 // Returns the sum of the absolute values of the elements of vector x
 template <typename Dtype>
