@@ -30,8 +30,8 @@ class ComplexInnerProductLayerTest : public MultiDeviceTest<TypeParam> {
     bottom_size[2] = 4;
     bottom_size[3] = 5;
     bottom_size[4] = 2;
-//    bottom_size[0] = 2;
-//    bottom_size[1] = 3;
+//    bottom_size[0] = 1;
+//    bottom_size[1] = 1;
 //    bottom_size[2] = 1;
 //    bottom_size[3] = 1;
 //    bottom_size[4] = 2;
@@ -238,8 +238,8 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestForwardSimple2) {
 
   const Dtype* top_data = this->blob_top_->cpu_data();
 
-  EXPECT_FLOAT_EQ(std::real(expected_top_complex), top_data[0]);
-  EXPECT_FLOAT_EQ(std::imag(expected_top_complex), top_data[1]);
+  EXPECT_NEAR(std::real(expected_top_complex), top_data[0], 1e-5*std::abs(expected_top_complex));
+  EXPECT_NEAR(std::imag(expected_top_complex), top_data[1], 1e-5*std::abs(expected_top_complex));
 
   delete bottom;
   delete[] bot_complex;
@@ -495,12 +495,13 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestForwardManual) {
     LayerParameter layer_param;
     InnerProductParameter* inner_product_param =
         layer_param.mutable_inner_product_param();
-    int B = 2;
-    int C_in = 3;
-    int H = 4;
-    int W = 5;
+    int B = this->blob_bottom_->shape(0);
+    int C_in = this->blob_bottom_->shape(1);
+    int H = this->blob_bottom_->shape(2);
+    int W = this->blob_bottom_->shape(3);
     int K = C_in*H*W;
     int C_out = 10;
+//    int C_out = 1;
     inner_product_param->set_num_output(C_out);
     inner_product_param->mutable_weight_filler()->set_type("uniform");
     inner_product_param->mutable_bias_filler()->set_type("uniform");
@@ -527,8 +528,13 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestForwardManual) {
       for(int c_out = 0; c_out < C_out; ++c_out, ++bias_index, ++top_expected_index) {
         size_t bottom_index = b*K;
         std::complex<Dtype> value = bias_data[bias_index];
+//        printf("value = %lf + i%lf\n", std::real(value), std::imag(value));
         for(int k = 0; k < K; ++k, ++bottom_index, ++weight_index) {
+//          printf("bottom[%ld] = %lf + i%lf, weight[%ld] = %lf + i %lf\n",
+//        		  bottom_index, std::real(bottom_data[bottom_index]), std::imag(bottom_data[bottom_index]),
+//				  weight_index, std::real(weight_data[weight_index]), std::imag(weight_data[weight_index]));
           value += bottom_data[bottom_index]*weight_data[weight_index];
+//          printf("value = %lf + i%lf\n", std::real(value), std::imag(value));
         }
         top_expected_data[top_expected_index] = value;
       }
@@ -578,12 +584,13 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestBackwardManual) {
     LayerParameter layer_param;
     InnerProductParameter* inner_product_param =
         layer_param.mutable_inner_product_param();
-    int B = 2;
-    int C_in = 3;
-    int H = 4;
-    int W = 5;
+    int B = this->blob_bottom_->shape(0);
+    int C_in = this->blob_bottom_->shape(1);
+    int H = this->blob_bottom_->shape(2);
+    int W = this->blob_bottom_->shape(3);
     int K = C_in*H*W;
     int C_out = 10;
+//    int C_out = 1;
     inner_product_param->set_num_output(C_out);
     inner_product_param->mutable_weight_filler()->set_type("uniform");
     inner_product_param->mutable_bias_filler()->set_type("uniform");
@@ -626,7 +633,7 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestBackwardManual) {
       for(int k = 0; k < K; ++k, ++bottom_diff_expected_index) {
         size_t top_diff_index = b*C_out;
         size_t weight_index = k;
-        bottom_diff_expected[bottom_diff_expected_index] = 0;
+        bottom_diff_expected[bottom_diff_expected_index] = std::complex<Dtype>(0);
         for(int c_out = 0; c_out < C_out; ++c_out, ++top_diff_index, weight_index+=K) {
           bottom_diff_expected[bottom_diff_expected_index] += top_diff[top_diff_index]*std::conj(weight_data[weight_index]);
         }
@@ -647,15 +654,26 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestBackwardManual) {
 
     // Check weight diff
 
-    std::complex<Dtype>* weight_diff_expected = new std::complex<Dtype>[B*K];
+//    printf("C_out=%d, K=%d\n", C_out, K);
+    std::complex<Dtype>* weight_diff_expected = new std::complex<Dtype>[C_out*K];
     size_t weight_diff_expected_index = 0;
     for(int c_out = 0; c_out < C_out; ++c_out) {
       for(int k = 0; k < K; ++k, ++weight_diff_expected_index) {
         size_t top_diff_index = c_out;
         size_t bottom_index = k;
-        weight_diff_expected[weight_diff_expected_index] = 0;
-        for(int b = 0; b < B; ++b, ++top_diff_index+=C_out, bottom_index+=K) {
+        weight_diff_expected[weight_diff_expected_index] = std::complex<Dtype>(0);
+//        printf("weight_diff[%ld] = %lf + i%lf\n", weight_diff_expected_index,
+//        		std::real(weight_diff_expected[weight_diff_expected_index]),
+//				std::imag(weight_diff_expected[weight_diff_expected_index]));
+        for(int b = 0; b < B; ++b, top_diff_index+=C_out, bottom_index+=K) {
+//          printf("top_diff[%ld] * conj(bottom[%ld]) = (%lf + 1i*%lf) * conj(%lf + 1i*%lf)\n",
+//				  top_diff_index, bottom_index,
+//				  std::real(top_diff[top_diff_index]), std::imag(top_diff[top_diff_index]),
+//        		  std::real(bottom_data[bottom_index]), std::imag(bottom_data[bottom_index]));
           weight_diff_expected[weight_diff_expected_index] += top_diff[top_diff_index]*std::conj(bottom_data[bottom_index]);
+//          printf("weight_diff[%ld] = %lf + i%lf\n", weight_diff_expected_index,
+//          		std::real(weight_diff_expected[weight_diff_expected_index]),
+//  				std::imag(weight_diff_expected[weight_diff_expected_index]));
         }
       }
     }
@@ -672,15 +690,24 @@ TYPED_TEST(ComplexInnerProductLayerTest, TestBackwardManual) {
       EXPECT_NEAR(std::imag(weight_diff_expected[i]), std::imag(weight_diff_actual[i]), 1e-5*maxVal);
     }
 
-    // Check weight diff
+    // Check bias diff
 
     std::complex<Dtype>* bias_diff_expected = new std::complex<Dtype>[B*K];
     size_t bias_diff_expected_index = 0;
     for(int c_out = 0; c_out < C_out; ++c_out, ++bias_diff_expected_index) {
       size_t top_diff_index = c_out;
-      bias_diff_expected[bias_diff_expected_index] = 0;
-      for(int b = 0; b < B; ++b, ++top_diff_index+=C_out) {
+      bias_diff_expected[bias_diff_expected_index] = std::complex<Dtype>(0);
+//	  printf("bias_diff[%ld] = %lf + i%lf\n", bias_diff_expected_index,
+//			std::real(bias_diff_expected[bias_diff_expected_index]),
+//			std::imag(bias_diff_expected[bias_diff_expected_index]));
+      for(int b = 0; b < B; ++b, top_diff_index+=C_out) {
+//     	printf("top_diff[%ld] = %lf + i%lf\n", top_diff_index,
+//     			std::real(top_diff[top_diff_index]),
+//				std::imag(top_diff[top_diff_index]));
         bias_diff_expected[bias_diff_expected_index] += top_diff[top_diff_index];
+//        printf("bias_diff[%ld] = %lf + i%lf\n", bias_diff_expected_index,
+//        		std::real(bias_diff_expected[bias_diff_expected_index]),
+//				std::imag(bias_diff_expected[bias_diff_expected_index]));
       }
     }
 
