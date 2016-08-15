@@ -14,12 +14,13 @@ namespace caffe {
  */
 template <typename Dtype>
 class ComplexLayer : public Layer<Dtype> {
-public:
- explicit ComplexLayer(const LayerParameter& param)
-     : Layer<Dtype>(param) {}
- protected:
+ public:
+  explicit ComplexLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
   static const std::complex<Dtype>* RealToComplex_cpu(const Dtype* real_data);
-  static std::complex<Dtype>* RealToComplex_cpu(Dtype* real_data);
+  static std::complex<Dtype>* RealToComplex_mutable_cpu(Dtype* real_data);
+
+ protected:
   const std::complex<Dtype>* RealToComplexBottomData_cpu(const vector<Blob<Dtype>*>& bottom, int index);
   const std::complex<Dtype>* RealToComplexBottomDiff_cpu(const vector<Blob<Dtype>*>& bottom, int index);
   std::complex<Dtype>* RealToComplexBottomDiff_mutable_cpu(const vector<Blob<Dtype>*>& bottom, int index);

@@ -45,6 +45,8 @@ class ComplexInnerProductLayer : public ComplexLayer<Dtype> {
   int N_;
   bool bias_term_;
   Blob<Dtype> bias_multiplier_;
+  Blob<Dtype> conj_weight_;
+  Blob<Dtype> conj_bottom_;
   bool transpose_;  ///< if true, assume transposed weights
 };
 

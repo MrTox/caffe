@@ -11,7 +11,7 @@ const std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplex_cpu(const Dtype* r
 }
 
 template <typename Dtype>
-std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplex_cpu(Dtype* real_data) {
+std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplex_mutable_cpu(Dtype* real_data) {
   // Living life on the edge: side stepping illegal static_cast from float* to complex<float>*
   return reinterpret_cast<std::complex<Dtype>* >(real_data);
 }
@@ -28,7 +28,7 @@ const std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexBottomDiff_cpu(cons
 
 template <typename Dtype>
 std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexBottomDiff_mutable_cpu(const vector<Blob<Dtype>*>& bottom, int index) {
-  return RealToComplex_cpu(bottom[index]->mutable_cpu_diff());
+  return RealToComplex_mutable_cpu(bottom[index]->mutable_cpu_diff());
 }
 
 template <typename Dtype>
@@ -38,7 +38,7 @@ const std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexTopData_cpu(const v
 
 template <typename Dtype>
 std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexTopData_mutable_cpu(const vector<Blob<Dtype>*>& top, int index) {
-  return RealToComplex_cpu(top[index]->mutable_cpu_data());
+  return RealToComplex_mutable_cpu(top[index]->mutable_cpu_data());
 }
 
 template <typename Dtype>
@@ -53,7 +53,7 @@ const std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexBlobData_cpu(int in
 
 template <typename Dtype>
 std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexBlobData_mutable_cpu(int index) {
-  return RealToComplex_cpu(this->blobs_[index]->mutable_cpu_data());
+  return RealToComplex_mutable_cpu(this->blobs_[index]->mutable_cpu_data());
 }
 
 template <typename Dtype>
@@ -63,8 +63,10 @@ const std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexBlobDiff_cpu(int in
 
 template <typename Dtype>
 std::complex<Dtype>* ComplexLayer<Dtype>::RealToComplexBlobDiff_mutable_cpu(int index) {
-  return RealToComplex_cpu(this->blobs_[index]->mutable_cpu_diff());
+  return RealToComplex_mutable_cpu(this->blobs_[index]->mutable_cpu_diff());
 }
+
+// We are casting the data in RealToComplex, so there is no action needed in SyncComplex
 
 template <typename Dtype>
 void ComplexLayer<Dtype>::SyncComplex_cpu(const std::complex<Dtype>* complex_data, Dtype* real_data) {}

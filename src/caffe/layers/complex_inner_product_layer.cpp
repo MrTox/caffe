@@ -23,7 +23,7 @@ void ComplexInnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bot
   // Dimensions starting from "axis" are "flattened" into a single
   // length K_ vector. For example, if bottom[0]'s shape is (N, C, H, W),
   // and axis == 1, N inner products with dimension CHW are performed.
-  K_ = bottom[0]->count(axis, bottom[0]->num_axes());
+  K_ = bottom[0]->count(axis, bottom[0]->num_axes()-1);
   // Check if we need to set up the weights
   if (this->blobs_.size() > 0) {
     LOG(INFO) << "Skipping parameter initialization";
@@ -72,7 +72,7 @@ void ComplexInnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom
   // Figure out the dimensions
   const int axis = bottom[0]->CanonicalAxisIndex(
       this->layer_param_.inner_product_param().axis());
-  const int new_K = bottom[0]->count(axis, bottom[0]->num_axes());
+  const int new_K = bottom[0]->count(axis, bottom[0]->num_axes()-1);
   CHECK_EQ(K_, new_K)
       << "Input size incompatible with inner product parameters.";
   // The first "axis" dimensions are independent inner products; the total
@@ -95,10 +95,13 @@ void ComplexInnerProductLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom
     bias_multiplier_.Reshape(bias_shape);
 
     // Setting bias_data to complex(1,0)
-    std::complex<Dtype>* bias_data = this->RealToComplex_cpu(bias_multiplier_.mutable_cpu_data());
+    std::complex<Dtype>* bias_data = this->RealToComplex_mutable_cpu(bias_multiplier_.mutable_cpu_data());
     caffe_set(M_, std::complex<Dtype>(1), bias_data);
     this->SyncComplex_cpu(bias_data, bias_multiplier_.mutable_cpu_data());
   }
+
+  conj_weight_.Reshape(this->blobs_[0]->shape());
+  conj_bottom_.Reshape(bottom[0]->shape());
 }
 
 template <typename Dtype>
@@ -135,15 +138,18 @@ void ComplexInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
           std::complex<Dtype>(1), bottom_data, top_diff,
           std::complex<Dtype>(1), this->RealToComplexBlobDiff_mutable_cpu(0));
     } else {
-#ifdef USE_MKL
-      // TODO Complex: MKL doesn't have a conjugate-no-transform operation (AtlasConj)
-      NOT_IMPLEMENTED;
-#else
-      caffe_cpu_gemm<std::complex<Dtype> >(CblasTrans, AtlasConj,
+      // MKL and Xcode Accelerate don't support a conjugate-no-transform operation (AtlasConj)
+      // so we will manuall make a conjugate copy.
+      std::complex<Dtype>* conj_bottom_data = this->RealToComplex_mutable_cpu(this->conj_bottom_.mutable_cpu_data());
+      for(int i = 0; i < conj_bottom_.count()/2; ++i) {
+        conj_bottom_data[i] = std::conj(bottom_data[i]);
+      }
+
+//      caffe_cpu_gemm<std::complex<Dtype> >(CblasTrans, AtlasConj,
+      caffe_cpu_gemm<std::complex<Dtype> >(CblasTrans, CblasNoTrans,
           N_, K_, M_,
-          std::complex<Dtype>(1), top_diff, bottom_data,
+          std::complex<Dtype>(1), top_diff, conj_bottom_data,
           std::complex<Dtype>(1), this->RealToComplexBlobDiff_mutable_cpu(0));
-#endif
     }
     this->SyncComplexBlobDiff_cpu(0);
   }
@@ -164,15 +170,19 @@ void ComplexInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
           std::complex<Dtype>(1), top_diff, this->RealToComplexBlobData_cpu(0),
           std::complex<Dtype>(0), this->RealToComplexBottomDiff_mutable_cpu(bottom, 0));
     } else {
-#ifdef USE_MKL
-      // TODO Complex: MKL doesn't have a conjugate-no-transform operation (AtlasConj)
-      NOT_IMPLEMENTED;
-#else
-      caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, AtlasConj,
+      // MKL and Xcode Accelerate don't support a conjugate-no-transform operation (AtlasConj)
+      // so we will manually make a conjugate copy.
+      std::complex<Dtype>* conj_weight_data = this->RealToComplex_mutable_cpu(this->conj_weight_.mutable_cpu_data());
+      const std::complex<Dtype>* weight_data = this->RealToComplexBlobData_cpu(0);
+      for(int i = 0; i < conj_weight_.count()/2; ++i) {
+        conj_weight_data[i] = std::conj(weight_data[i]);
+      }
+
+//      caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, AtlasConj,
+      caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, CblasNoTrans,
           M_, K_, N_,
-          std::complex<Dtype>(1), top_diff, this->RealToComplexBlobData_cpu(0),
+          std::complex<Dtype>(1), top_diff, conj_weight_data,
           std::complex<Dtype>(0), this->RealToComplexBottomDiff_mutable_cpu(bottom, 0));
-#endif
     }
     this->SyncComplexBottomDiff_cpu(bottom, 0);
   }
