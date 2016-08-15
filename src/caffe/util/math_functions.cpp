@@ -40,8 +40,10 @@ void caffe_cpu_gemm<std::complex<float> >(const CBLAS_TRANSPOSE TransA,
     std::complex<float>* C) {
   int lda = (TransA == CblasNoTrans) ? K : M;
   int ldb = (TransB == CblasNoTrans) ? N : K;
-  cblas_cgemm(CblasRowMajor, TransA, TransB, M, N, K, &alpha, A, lda, B,
-      ldb, &beta, C, N);
+  cblas_cgemm(CblasRowMajor, TransA, TransB, M, N, K,
+      reinterpret_cast<const float*>(&alpha), reinterpret_cast<const float*>(A), lda,
+	  reinterpret_cast<const float*>(B), ldb,
+	  reinterpret_cast<const float*>(&beta), reinterpret_cast<float*>(C), N);
 }
 
 template<>
@@ -52,8 +54,10 @@ void caffe_cpu_gemm<std::complex<double> >(const CBLAS_TRANSPOSE TransA,
     std::complex<double>* C) {
   int lda = (TransA == CblasNoTrans) ? K : M;
   int ldb = (TransB == CblasNoTrans) ? N : K;
-  cblas_zgemm(CblasRowMajor, TransA, TransB, M, N, K, &alpha, A, lda, B,
-      ldb, &beta, C, N);
+  cblas_zgemm(CblasRowMajor, TransA, TransB, M, N, K,
+	  reinterpret_cast<const double*>(&alpha), reinterpret_cast<const double*>(A), lda,
+	  reinterpret_cast<const double*>(B), ldb,
+	  reinterpret_cast<const double*>(&beta), reinterpret_cast<double*>(C), N);
 }
 
 template <>
@@ -75,7 +79,10 @@ void caffe_cpu_gemv<std::complex<float> >(const CBLAS_TRANSPOSE TransA, const in
     const int N, const std::complex<float> alpha, const std::complex<float>* A,
     const std::complex<float>* x,
     const std::complex<float> beta, std::complex<float>* y) {
-  cblas_cgemv(CblasRowMajor, TransA, M, N, &alpha, A, N, x, 1, &beta, y, 1);
+  cblas_cgemv(CblasRowMajor, TransA, M, N,
+		  reinterpret_cast<const float*>(&alpha), reinterpret_cast<const float*>(A),
+		  N, reinterpret_cast<const float*>(x), 1,
+		  reinterpret_cast<const float*>(&beta), reinterpret_cast<float*>(y), 1);
 }
 
 template <>
@@ -83,7 +90,10 @@ void caffe_cpu_gemv<std::complex<double> >(const CBLAS_TRANSPOSE TransA, const i
     const int N, const std::complex<double> alpha, const std::complex<double>* A,
     const std::complex<double>* x,
     const std::complex<double> beta, std::complex<double>* y) {
-  cblas_zgemv(CblasRowMajor, TransA, M, N, &alpha, A, N, x, 1, &beta, y, 1);
+  cblas_zgemv(CblasRowMajor, TransA, M, N,
+		  reinterpret_cast<const double*>(&alpha), reinterpret_cast<const double*>(A),
+		  N, reinterpret_cast<const double*>(x), 1,
+		  reinterpret_cast<const double*>(&beta), reinterpret_cast<double*>(y), 1);
 }
 
 template <>
@@ -97,12 +107,18 @@ void caffe_axpy<double>(const int N, const double alpha, const double* X,
 template <>
 void caffe_axpy<std::complex<float> >(const int N, const std::complex<float> alpha,
     const std::complex<float>* X,
-    std::complex<float>* Y) { cblas_caxpy(N, &alpha, X, 1, Y, 1); }
+    std::complex<float>* Y) {
+  cblas_caxpy(N, reinterpret_cast<const float*>(&alpha),
+		  reinterpret_cast<const float*>(X), 1,
+		  reinterpret_cast<float*>(Y), 1); }
 
 template <>
 void caffe_axpy<std::complex<double> >(const int N, const std::complex<double> alpha,
     const std::complex<double>* X,
-    std::complex<double>* Y) { cblas_zaxpy(N, &alpha, X, 1, Y, 1); }
+    std::complex<double>* Y) {
+  cblas_zaxpy(N, reinterpret_cast<const double*>(&alpha),
+		  reinterpret_cast<const double*>(X), 1,
+		  reinterpret_cast<double*>(Y), 1); }
 
 template <typename Dtype>
 void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
@@ -200,12 +216,12 @@ void caffe_scal<double>(const int N, const double alpha, double *X) {
 
 template <>
 void caffe_scal<std::complex<float> >(const int N, const std::complex<float> alpha, std::complex<float> *X) {
-  cblas_cscal(N, &alpha, X, 1);
+  cblas_cscal(N, reinterpret_cast<const float*>(&alpha), reinterpret_cast<float*>(X), 1);
 }
 
 template <>
 void caffe_scal<std::complex<double> >(const int N, const std::complex<double> alpha, std::complex<double> *X) {
-  cblas_zscal(N, &alpha, X, 1);
+  cblas_zscal(N, reinterpret_cast<const double*>(&alpha), reinterpret_cast<double*>(X), 1);
 }
 
 template <>
@@ -649,11 +665,14 @@ template <>
 std::complex<float> caffe_cpu_strided_dot<std::complex<float> >(const int n, const std::complex<float>* x, const int incx,
     const std::complex<float>* y, const int incy, const bool conj_x) {
   std::complex<float> result;
+  NOT_IMPLEMENTED; // TODO Check proper result cast
   if(conj_x) {
-    cblas_cdotc_sub(n, x, incx, y, incy, &result);
+    cblas_cdotc_sub(n, reinterpret_cast<const float*>(x), incx, reinterpret_cast<const float*>(y), incy,
+    		reinterpret_cast<float __complex__*>(&result));
   }
   else {
-    cblas_cdotu_sub(n, x, incx, y, incy, &result);
+    cblas_cdotu_sub(n, reinterpret_cast<const float*>(x), incx, reinterpret_cast<const float*>(y), incy,
+    		reinterpret_cast<float __complex__*>(&result));
   }
   return result;
 }
@@ -662,11 +681,14 @@ template <>
 std::complex<double> caffe_cpu_strided_dot<std::complex<double> >(const int n, const std::complex<double>* x, const int incx,
     const std::complex<double>* y, const int incy, const bool conj_x) {
   std::complex<double> result;
+  NOT_IMPLEMENTED; // TODO Check proper result cast
   if(conj_x) {
-    cblas_zdotc_sub(n, x, incx, y, incy, &result);
+    cblas_zdotc_sub(n, reinterpret_cast<const double*>(x), incx, reinterpret_cast<const double*>(y), incy,
+			reinterpret_cast<double __complex__*>(&result));
   }
   else {
-    cblas_zdotu_sub(n, x, incx, y, incy, &result);
+    cblas_zdotu_sub(n, reinterpret_cast<const double*>(x), incx, reinterpret_cast<const double*>(y), incy,
+    		reinterpret_cast<double __complex__*>(&result));
   }
   return result;
 }
@@ -702,13 +724,13 @@ double caffe_cpu_asum<double>(const int n, const double* x) {
 
 template <>
 std::complex<float> caffe_cpu_asum<std::complex<float> >(const int n, const std::complex<float>* x) {
-  std::complex<float> result = cblas_scasum(n, x, 1);
+  std::complex<float> result = cblas_scasum(n, reinterpret_cast<const float*>(x), 1);
   return result;
 }
 
 template <>
 std::complex<double> caffe_cpu_asum<std::complex<double> >(const int n, const std::complex<double>* x) {
-  std::complex<double> result = cblas_dzasum(n, x, 1);
+  std::complex<double> result = cblas_dzasum(n, reinterpret_cast<const double*>(x), 1);
   return result;
 }
 
@@ -729,15 +751,15 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
 template <>
 void caffe_cpu_scale<std::complex<float> >(const int n, const std::complex<float> alpha, const std::complex<float> *x,
                                            std::complex<float>* y) {
-  cblas_ccopy(n, x, 1, y, 1);
-  cblas_cscal(n, &alpha, y, 1);
+  cblas_ccopy(n, reinterpret_cast<const float*>(x), 1, reinterpret_cast<float*>(y), 1);
+  cblas_cscal(n, reinterpret_cast<const float*>(&alpha), reinterpret_cast<float*>(y), 1);
 }
 
 template <>
 void caffe_cpu_scale<std::complex<double> >(const int n, const std::complex<double> alpha, const std::complex<double> *x,
                                            std::complex<double>* y) {
-  cblas_zcopy(n, x, 1, y, 1);
-  cblas_zscal(n, &alpha, y, 1);
+  cblas_zcopy(n, reinterpret_cast<const double*>(x), 1, reinterpret_cast<double*>(y), 1);
+  cblas_zscal(n, reinterpret_cast<const double*>(&alpha), reinterpret_cast<double*>(y), 1);
 }
 
 }  // namespace caffe

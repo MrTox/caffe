@@ -120,14 +120,16 @@ inline void cblas_daxpby(const int N, const double alpha, const double* X,
 inline void cblas_caxpby(const int N, const std::complex<float> alpha, const std::complex<float>* X,
                          const int incX, const std::complex<float> beta, std::complex<float>* Y,
                          const int incY) {
-  cblas_cscal(N, &beta, Y, incY);
-  cblas_caxpy(N, &alpha, X, incX, Y, incY);
+  cblas_cscal(N, reinterpret_cast<const float*>(&beta), reinterpret_cast<float*>(Y), incY);
+  cblas_caxpy(N, reinterpret_cast<const float*>(&alpha), reinterpret_cast<const float*>(X),
+		  incX, reinterpret_cast<float*>(Y), incY);
 }
 inline void cblas_zaxpby(const int N, const std::complex<double> alpha, const std::complex<double>* X,
                          const int incX, const std::complex<double> beta, std::complex<double>* Y,
                          const int incY) {
-  cblas_zscal(N, &beta, Y, incY);
-  cblas_zaxpy(N, &alpha, X, incX, Y, incY);
+  cblas_zscal(N, reinterpret_cast<const double*>(&beta), reinterpret_cast<double*>(Y), incY);
+  cblas_zaxpy(N, reinterpret_cast<const double*>(&alpha), reinterpret_cast<const double*>(X),
+		  incX, reinterpret_cast<double*>(Y), incY);
 }
 
 #endif  // USE_MKL
