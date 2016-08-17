@@ -57,5 +57,6 @@ void ComplexMagnitudeLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 //#endif
 
 INSTANTIATE_CLASS(ComplexMagnitudeLayer);
+REGISTER_LAYER_CLASS(ComplexMagnitude);
 
 }  // namespace caffe
