@@ -113,15 +113,14 @@ void ComplexInnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bo
   caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, transpose_ ? CblasNoTrans : CblasTrans,
       M_, N_, K_, std::complex<Dtype>(1),
       bottom_data, weight, std::complex<Dtype>(0), top_data);
-  this->SyncComplexTopData_cpu(top, 0);
 
   if (bias_term_) {
     // TODO need safer to manage bias_multiplier data
     caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, CblasNoTrans, M_, N_, 1, std::complex<Dtype>(1),
         this->RealToComplex_cpu(bias_multiplier_.cpu_data()),
         this->RealToComplexBlobData_cpu(1), Dtype(1), top_data);
-    this->SyncComplexTopData_cpu(top, 0);
   }
+  this->SyncComplexTopData_cpu(top, 0);
 }
 
 template <typename Dtype>
