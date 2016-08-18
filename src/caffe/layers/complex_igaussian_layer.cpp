@@ -38,7 +38,7 @@ void ComplexIGaussianLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const Dtype* top_data = top[0]->cpu_data();
     const Dtype* top_diff = top[0]->cpu_diff();
     const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_cpu(bottom, 0);
-    std::complex<Dtype>* bottom_diff = this->RealToComplexBlobDiff_mutable_cpu(0);
+    std::complex<Dtype>* bottom_diff = this->RealToComplexBottomDiff_mutable_cpu(bottom, 0);
 
     const int count = top[0]->count();
 
