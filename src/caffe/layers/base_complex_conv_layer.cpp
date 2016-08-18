@@ -11,6 +11,9 @@ namespace caffe {
 template <typename Dtype>
 void BaseComplexConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+  CHECK_EQ(bottom[0]->shape(-1),2)
+		  << "Input blob should have last dimension of size 2 for the real/imaginary channel";
+
   // Configure the kernel size, padding, stride, and inputs.
   ConvolutionParameter conv_param = this->layer_param_.convolution_param();
   force_nd_im2col_ = conv_param.force_nd_im2col();
