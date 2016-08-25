@@ -29,7 +29,7 @@ void ComplexBatchNormLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom
     this->blobs_[0].reset(new Blob<Dtype>(sizeC));
     this->blobs_[1].reset(new Blob<Dtype>(sizeC));
     vector<int> size1;
-    size1[0]=1;
+    size1.push_back(1);
     this->blobs_[2].reset(new Blob<Dtype>(size1));
 
     for (int i = 0; i < 2; ++i) {
