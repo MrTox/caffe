@@ -7,6 +7,7 @@ namespace caffe {
 template <typename Dtype>
 void ComplexIGaussianLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+  CHECK_NE(bottom[0], top[0]) << "ComplexIGaussianLayer cannot have the same top and bottom";
   CHECK_EQ(2, bottom[0]->shape(-1));
 
   vector<int> shape = bottom[0]->shape();
