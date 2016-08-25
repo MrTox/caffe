@@ -36,8 +36,8 @@ void ComplexPoolingLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << "Stride is stride OR stride_h and stride_w are required.";
   global_pooling_ = pool_param.global_pooling();
   if (global_pooling_) {
-    kernel_h_ = bottom[0]->height();
-    kernel_w_ = bottom[0]->width();
+    kernel_h_ = bottom[0]->shape(2);
+    kernel_w_ = bottom[0]->shape(3);
   } else {
     if (pool_param.has_kernel_size()) {
       kernel_h_ = kernel_w_ = pool_param.kernel_size();
@@ -83,12 +83,12 @@ void ComplexPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   CHECK_EQ(bottom[0]->shape(-1),2)
       << "Input blob should have last dimension of size 2 for the real/imaginary channel";
 
-  channels_ = bottom[0]->channels();
-  height_ = bottom[0]->height();
-  width_ = bottom[0]->width();
+  channels_ = bottom[0]->shape(1);
+  height_ = bottom[0]->shape(2);
+  width_ = bottom[0]->shape(3);
   if (global_pooling_) {
-    kernel_h_ = bottom[0]->height();
-    kernel_w_ = bottom[0]->width();
+    kernel_h_ = bottom[0]->shape(2);
+    kernel_w_ = bottom[0]->shape(3);
   }
   pooled_height_ = static_cast<int>(ceil(static_cast<float>(
       height_ + 2 * pad_h_ - kernel_h_) / stride_h_)) + 1;
@@ -107,7 +107,7 @@ void ComplexPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     CHECK_LT((pooled_width_ - 1) * stride_w_, width_ + pad_w_);
   }
   vector<int> top_shape(5);
-  top_shape[0] = bottom[0]->num();
+  top_shape[0] = bottom[0]->shape(0);
   top_shape[1] = channels_;
   top_shape[2] = pooled_height_;
   top_shape[3] = pooled_width_;
@@ -119,13 +119,13 @@ void ComplexPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   // If max pooling, we will initialize the vector index part.
   if (this->layer_param_.pooling_param().pool() ==
       PoolingParameter_PoolMethod_MAX && top.size() == 1) {
-    max_idx_.Reshape(bottom[0]->num(), channels_, pooled_height_,
+    max_idx_.Reshape(bottom[0]->shape(0), channels_, pooled_height_,
         pooled_width_);
   }
   // If stochastic pooling, we will initialize the random index part.
   if (this->layer_param_.pooling_param().pool() ==
       PoolingParameter_PoolMethod_STOCHASTIC) {
-    rand_idx_.Reshape(bottom[0]->num(), channels_, pooled_height_,
+    rand_idx_.Reshape(bottom[0]->shape(0), channels_, pooled_height_,
         pooled_width_);
   }
 }
@@ -142,6 +142,14 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const bool use_top_mask = top.size() > 1;
   int* mask = NULL;  // suppress warnings about uninitalized variables
   std::complex<Dtype>* top_mask = NULL;
+
+  vector<int> offset_indices;
+  offset_indices.push_back(0);
+  offset_indices.push_back(1);
+  for(int i = 2; i < bottom[0]->num_axes(); ++i) {
+    offset_indices.push_back(0);
+  }
+
   // Different pooling methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more code.
   switch (this->layer_param_.pooling_param().pool()) {
@@ -156,7 +164,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
     caffe_set(top_count, std::complex<Dtype>(0), top_data);
     // The main loop
-    for (int n = 0; n < bottom[0]->num(); ++n) {
+    for (int n = 0; n < bottom[0]->shape(0); ++n) {
       for (int c = 0; c < channels_; ++c) {
         for (int ph = 0; ph < pooled_height_; ++ph) {
           for (int pw = 0; pw < pooled_width_; ++pw) {
@@ -183,12 +191,12 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           }
         }
         // compute offset
-        bottom_data += bottom[0]->offset(0, 1);
-        top_data += top[0]->offset(0, 1);
+        bottom_data += bottom[0]->offset(offset_indices)/2;
+        top_data += top[0]->offset(offset_indices)/2;
         if (use_top_mask) {
-          top_mask += top[0]->offset(0, 1);
+          top_mask += top[0]->offset(offset_indices)/2;
         } else {
-          mask += top[0]->offset(0, 1);
+          mask += top[0]->offset(offset_indices)/2;
         }
       }
     }
@@ -202,7 +210,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       top_data[i] = std::complex<Dtype>(0);
     }
     // The main loop
-    for (int n = 0; n < bottom[0]->num(); ++n) {
+    for (int n = 0; n < bottom[0]->shape(0); ++n) {
       for (int c = 0; c < channels_; ++c) {
         for (int ph = 0; ph < pooled_height_; ++ph) {
           for (int pw = 0; pw < pooled_width_; ++pw) {
@@ -225,8 +233,8 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           }
         }
         // compute offset
-        bottom_data += bottom[0]->offset(0, 1);
-        top_data += top[0]->offset(0, 1);
+        bottom_data += bottom[0]->offset(offset_indices)/2;
+        top_data += top[0]->offset(offset_indices)/2;
       }
     }
     this->SyncComplexTopData_cpu(top, 0);
@@ -245,6 +253,11 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   if (!propagate_down[0]) {
     return;
   }
+
+  CHECK_EQ(bottom[0]->num_axes(), top[0]->num_axes());
+  CHECK_EQ(2, bottom[0]->shape(-1));
+  CHECK_EQ(2, top[0]->shape(-1));
+
   const std::complex<Dtype>* top_diff = this->RealToComplexTopDiff_cpu(top, 0);
   std::complex<Dtype>* bottom_diff = this->RealToComplexBottomDiff_mutable_cpu(bottom, 0);
   // Different pooling methods. We explicitly do the switch outside the for
@@ -254,6 +267,14 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;  // suppress warnings about uninitialized variables
   const std::complex<Dtype>* top_mask = NULL;
+
+  vector<int> offset_indices;
+  offset_indices.push_back(0);
+  offset_indices.push_back(1);
+  for(int i = 2; i < bottom[0]->num_axes(); ++i) {
+    offset_indices.push_back(0);
+  }
+
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
     // The main loop
@@ -262,7 +283,7 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     } else {
       mask = max_idx_.cpu_data();
     }
-    for (int n = 0; n < top[0]->num(); ++n) {
+    for (int n = 0; n < top[0]->shape(0); ++n) {
       for (int c = 0; c < channels_; ++c) {
         for (int ph = 0; ph < pooled_height_; ++ph) {
           for (int pw = 0; pw < pooled_width_; ++pw) {
@@ -272,12 +293,12 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             bottom_diff[bottom_index] += top_diff[index];
           }
         }
-        bottom_diff += bottom[0]->offset(0, 1);
-        top_diff += top[0]->offset(0, 1);
+        bottom_diff += bottom[0]->offset(offset_indices)/2;
+        top_diff += top[0]->offset(offset_indices)/2;
         if (use_top_mask) {
-          top_mask += top[0]->offset(0, 1);
+          top_mask += top[0]->offset(offset_indices)/2;
         } else {
-          mask += top[0]->offset(0, 1);
+          mask += top[0]->offset(offset_indices)/2;
         }
       }
     }
@@ -285,7 +306,7 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     break;
   case PoolingParameter_PoolMethod_AVE:
     // The main loop
-    for (int n = 0; n < top[0]->num(); ++n) {
+    for (int n = 0; n < top[0]->shape(0); ++n) {
       for (int c = 0; c < channels_; ++c) {
         for (int ph = 0; ph < pooled_height_; ++ph) {
           for (int pw = 0; pw < pooled_width_; ++pw) {
@@ -307,8 +328,8 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
           }
         }
         // offset
-        bottom_diff += bottom[0]->offset(0, 1);
-        top_diff += top[0]->offset(0, 1);
+        bottom_diff += bottom[0]->offset(offset_indices)/2;
+        top_diff += top[0]->offset(offset_indices)/2;
       }
     }
     this->SyncComplexBottomDiff_cpu(bottom, 0);
