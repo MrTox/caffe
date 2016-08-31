@@ -188,10 +188,9 @@ void ComplexInnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
 }
 
 
-// TODO Complex Uncomment when we implement Forward_gpu and Backward_gpu
-//#ifdef CPU_ONLY
-//STUB_GPU(ComplexInnerProductLayer);
-//#endif
+#ifdef CPU_ONLY
+STUB_GPU(ComplexInnerProductLayer);
+#endif
 
 INSTANTIATE_CLASS(ComplexInnerProductLayer);
 REGISTER_LAYER_CLASS(ComplexInnerProduct);
