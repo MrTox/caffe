@@ -732,29 +732,33 @@ __global__ void exp_kernel(const int n, const Dtype* a, Dtype* y) {
 template __global__ void exp_kernel(const int n, const float* a, float* y);
 template __global__ void exp_kernel(const int n, const double* a, double* y);
 
-template <>
-__global__ void exp_kernel(const int n, const cuComplex* a, cuComplex* y) {
-  CUDA_KERNEL_LOOP(index, n) {
-    cuComplex inVal = a[index];
-    float exp_real = exp(inVal.x);
+__device__ void caffe_gpu_complex_exp(const cuComplex a, cuComplex &b) {
+    float exp_real = expf(a.x);
     float sin_imag;
     float cos_imag;
-    sincosf(inVal.y, &sin_imag, &cos_imag);
-    y[index].x = exp_real*cos_imag;
-    y[index].y = exp_real*sin_imag;
+    sincosf(a.y, &sin_imag, &cos_imag);
+    b.x = exp_real*cos_imag;
+    b.y = exp_real*sin_imag;
+}
+
+__device__ void caffe_gpu_complex_exp(const cuDoubleComplex a, cuDoubleComplex &b) {
+    double exp_real = exp(a.x);
+    double sin_imag;
+    double cos_imag;
+    sincos(a.y, &sin_imag, &cos_imag);
+    b.x = exp_real*cos_imag;
+    b.y = exp_real*sin_imag;
+}
+
+__global__ void exp_kernel(const int n, const cuComplex* a, cuComplex* b) {
+  CUDA_KERNEL_LOOP(index, n) {
+    caffe_gpu_complex_exp(a[index],b[index]);
   }
 }
 
-template <>
-__global__ void exp_kernel(const int n, const cuDoubleComplex* a, cuDoubleComplex* y) {
+__global__ void exp_kernel(const int n, const cuDoubleComplex* a, cuDoubleComplex* b) {
   CUDA_KERNEL_LOOP(index, n) {
-    cuDoubleComplex inVal = a[index];
-    double exp_real = exp(inVal.x);
-    double sin_imag;
-    double cos_imag;
-    sincos(inVal.y, &sin_imag, &cos_imag);
-    y[index].x = exp_real*cos_imag;
-    y[index].y = exp_real*sin_imag;
+	caffe_gpu_complex_exp(a[index],b[index]);
   }
 }
 
@@ -775,14 +779,14 @@ void caffe_gpu_exp<double>(const int N, const double* a, double* y) {
 template <>
 void caffe_gpu_exp<std::complex<float> >(const int N, const std::complex<float>* a, std::complex<float>* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  exp_kernel<cuComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  exp_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, (const cuComplex*)a, (cuComplex*)y);
 }
 
 template <>
 void caffe_gpu_exp<std::complex<double> >(const int N, const std::complex<double>* a, std::complex<double>* y) {
   // NOLINT_NEXT_LINE(whitespace/operators)
-  exp_kernel<cuDoubleComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+  exp_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, (const cuDoubleComplex*)a, (cuDoubleComplex*)y);
 }
 
@@ -915,6 +919,33 @@ void caffe_gpu_powx<double>(const int N, const std::complex<double>* a,
   powx_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, (const cuDoubleComplex*)a, alpha, (cuDoubleComplex*)y);
 }
+
+__global__ void conj_kernel(const int n, const cuComplex* a, cuComplex* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = cuConjf(a[index]);
+  }
+}
+
+__global__ void conj_kernel(const int n, const cuDoubleComplex* a, cuDoubleComplex* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = cuConj(a[index]);
+  }
+}
+
+template <>
+void caffe_gpu_conj<std::complex<float> >(const int N, const std::complex<float>* a, std::complex<float>* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  conj_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, (const cuComplex*)a, (cuComplex*)y);
+}
+
+template <>
+void caffe_gpu_conj<std::complex<double> >(const int N, const std::complex<double>* a, std::complex<double>* y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  conj_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, (const cuDoubleComplex*)a, (cuDoubleComplex*)y);
+}
+
 
 DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])
                                       - (x[index] < Dtype(0)));

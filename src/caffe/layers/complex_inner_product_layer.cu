@@ -50,10 +50,7 @@ void ComplexInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& t
       // MKL and Xcode Accelerate don't support a conjugate-no-transform operation (AtlasConj)
       // so we will manuall make a conjugate copy.
       std::complex<Dtype>* conj_bottom_data = this->RealToComplex_mutable_gpu(this->conj_bottom_.mutable_gpu_data());
-      // TODO GPU kernel
-      for(int i = 0; i < conj_bottom_.count()/2; ++i) {
-        conj_bottom_data[i] = std::conj(bottom_data[i]);
-      }
+      caffe_gpu_conj<std::complex<Dtype> >(conj_bottom_.count()/2, bottom_data, conj_bottom_data);
 
 //      caffe_cpu_gemm<std::complex<Dtype> >(CblasTrans, AtlasConj,
       caffe_gpu_gemm<std::complex<Dtype> >(CblasTrans, CblasNoTrans,
@@ -84,10 +81,7 @@ void ComplexInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& t
       // so we will manually make a conjugate copy.
       std::complex<Dtype>* conj_weight_data = this->RealToComplex_mutable_gpu(this->conj_weight_.mutable_gpu_data());
       const std::complex<Dtype>* weight_data = this->RealToComplexBlobData_gpu(0);
-      // TODO GPU kernel
-      for(int i = 0; i < conj_weight_.count()/2; ++i) {
-        conj_weight_data[i] = std::conj(weight_data[i]);
-      }
+      caffe_gpu_conj<std::complex<Dtype> >(conj_weight_.count()/2, weight_data, conj_weight_data);
 
 //      caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, AtlasConj,
       caffe_gpu_gemm<std::complex<Dtype> >(CblasNoTrans, CblasNoTrans,

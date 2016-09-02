@@ -52,10 +52,9 @@ void ComplexIGaussianLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 }
 
 
-// TODO Complex Uncomment when we implement Forward_gpu and Backward_gpu
-//#ifdef CPU_ONLY
-//STUB_GPU(ComplexIGaussianLayer);
-//#endif
+#ifdef CPU_ONLY
+STUB_GPU(ComplexIGaussianLayer);
+#endif
 
 INSTANTIATE_CLASS(ComplexIGaussianLayer);
 REGISTER_LAYER_CLASS(ComplexIGaussian);
