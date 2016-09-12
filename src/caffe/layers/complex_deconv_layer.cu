@@ -31,14 +31,6 @@ void ComplexDeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& 
     any_propagate_down &= propagate_down[i];
   }
 
-  const std::complex<Dtype>* weight;
-  if (any_propagate_down) {
-    weight = this->RealToComplexBlobData_gpu(0);
-  }
-  else {
-    weight = NULL;
-  }
-
   std::complex<Dtype>* weight_diff = NULL;
   if (this->param_propagate_down_[0]) {
     weight_diff = this->RealToComplexBlobDiff_mutable_gpu(0);

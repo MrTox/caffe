@@ -448,6 +448,19 @@ void caffe_abs<std::complex<double> >(const int n, const std::complex<double>* a
     vzAbs(n, a, y);
 }
 
+template <typename Dtype>
+void caffe_abs(const int n, const std::complex<Dtype>* a, Dtype* y) {
+  CHECK_GT(n, 0);
+  CHECK(a);
+  CHECK(y);
+  for (int i = 0; i < n; ++i) {
+    y[i] = std::abs(a[i]);
+  }
+}
+
+template void caffe_abs<float>(const int N, const std::complex<float>* a, float* Y);
+template void caffe_abs<double>(const int N, const std::complex<double>* a, double* Y);
+
 unsigned int caffe_rng_rand() {
   return (*caffe_rng())();
 }

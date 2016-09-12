@@ -37,13 +37,12 @@ class ComplexPoolingLayer : public ComplexLayer<Dtype> {
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
-// TODO Complex
-//  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-//      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-//  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-//      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
   int kernel_h_, kernel_w_;
   int stride_h_, stride_w_;
@@ -54,6 +53,7 @@ class ComplexPoolingLayer : public ComplexLayer<Dtype> {
   bool global_pooling_;
   Blob<Dtype> rand_idx_;
   Blob<int> max_idx_;
+  Blob<Dtype> bottom_abs_;
 };
 
 }  // namespace caffe

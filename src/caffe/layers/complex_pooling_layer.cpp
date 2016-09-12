@@ -128,6 +128,15 @@ void ComplexPoolingLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     rand_idx_.Reshape(bottom[0]->shape(0), channels_, pooled_height_,
         pooled_width_);
   }
+
+  // If max pooling, initialize workspace for magnitude of bottom data for efficiency
+  if (this->layer_param_.pooling_param().pool() ==
+      PoolingParameter_PoolMethod_MAX) {
+    // Drop complex dimension this blob will be real-valued
+    vector<int> bottom_abs_shape(bottom[0]->shape());
+    bottom_abs_shape.pop_back();
+    bottom_abs_.Reshape(bottom_abs_shape);
+  }
 }
 
 // TODO(Yangqing): Is there a faster way to do pooling in the channel-first
@@ -154,6 +163,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // loop to save time, although this results in more code.
   switch (this->layer_param_.pooling_param().pool()) {
   case PoolingParameter_PoolMethod_MAX:
+  {
     // Initialize
     if (use_top_mask) {
       top_mask = this->RealToComplexTopData_mutable_cpu(top, 1);
@@ -163,6 +173,11 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       caffe_set(top_count, -1, mask);
     }
     caffe_set(top_count, std::complex<Dtype>(0), top_data);
+
+    // Store magnitude of bottom data separately to avoid repeated calls to abs()
+    Dtype* bottom_abs_data = bottom_abs_.mutable_cpu_data();
+    caffe_abs(top_count, bottom_data, bottom_abs_data);
+
     // The main loop
     for (int n = 0; n < bottom[0]->shape(0); ++n) {
       for (int c = 0; c < channels_; ++c) {
@@ -175,18 +190,20 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             hstart = max(hstart, 0);
             wstart = max(wstart, 0);
             const int pool_index = ph * pooled_width_ + pw;
+            int bestBottomIndex = hstart * width_ + wstart;
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
-                const int index = h * width_ + w;
-                if (std::abs(bottom_data[index]) > std::abs(top_data[pool_index])) {
-                  top_data[pool_index] = bottom_data[index];
-                  if (use_top_mask) {
-                    top_mask[pool_index] = std::complex<Dtype>(index);
-                  } else {
-                    mask[pool_index] = index;
-                  }
+                const int bottomIndex = h * width_ + w;
+                if (bottom_abs_data[bottomIndex] > bottom_abs_data[bestBottomIndex]) {
+                  bestBottomIndex = bottomIndex;
                 }
               }
+            }
+            top_data[pool_index] = bottom_data[bestBottomIndex];
+            if (use_top_mask) {
+              top_mask[pool_index] = std::complex<Dtype>(bestBottomIndex);
+            } else {
+              mask[pool_index] = bestBottomIndex;
             }
           }
         }
@@ -205,6 +222,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       this->SyncComplexTopData_cpu(top, 1);
     }
     break;
+  }
   case PoolingParameter_PoolMethod_AVE:
     for (int i = 0; i < top_count; ++i) {
       top_data[i] = std::complex<Dtype>(0);
