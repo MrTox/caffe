@@ -29,8 +29,8 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
 
   if (use_global_stats_) {
     // use the stored mean/variance estimates.
-    const Dtype scale_factor = this->blobs_[2]->gpu_data()[0] == 0 ?
-        0 : 1 / this->blobs_[2]->gpu_data()[0];
+    const Dtype scale_factor = this->blobs_[2]->cpu_data()[0] == 0 ?
+        0 : 1 / this->blobs_[2]->cpu_data()[0];
 
     caffe_gpu_scale(mean_.count()/2, std::complex<Dtype>(scale_factor),
         this->RealToComplexBlobData_gpu(0), mean_data);
@@ -62,9 +62,7 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   if (!use_global_stats_) {
     // compute variance using var(X) = E((X-EX)^H*(X-EX))
     // (X-EX)^H*(X-EX)
-    for(int i = 0; i < top[0]->count()/2; ++i) {
-      temp_data[i] = std::conj(top_data[i])*top_data[i];
-    }
+    caffe_gpu_mul(top[0]->count()/2, top_data, top_data, temp_data, true);
     caffe_gpu_gemv<std::complex<Dtype> >(CblasNoTrans, channels_ * num, spatial_dim,
         std::complex<Dtype>(1. / (num * spatial_dim)), temp_data,
         spatial_sum_multiplier_data, std::complex<Dtype>(0),
@@ -74,8 +72,8 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
         variance_data);  // E((X_EX)^H*(X-EX))
 
     // compute and save moving average
-    this->blobs_[2]->mutable_gpu_data()[0] *= moving_average_fraction_;
-    this->blobs_[2]->mutable_gpu_data()[0] += 1;
+    this->blobs_[2]->mutable_cpu_data()[0] *= moving_average_fraction_;
+    this->blobs_[2]->mutable_cpu_data()[0] += 1;
     caffe_gpu_axpby(mean_.count()/2, std::complex<Dtype>(1), mean_data,
         std::complex<Dtype>(moving_average_fraction_), this->RealToComplexBlobData_mutable_gpu(0));
     int m = bottom[0]->count()/2/channels_;
@@ -89,8 +87,8 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   }
 
   // normalize variance
-  caffe_add_scalar(variance_.count()/2, std::complex<Dtype>(eps_), variance_data);
-  caffe_powx(variance_.count()/2, variance_data, std::complex<Dtype>(0.5),
+  caffe_gpu_add_scalar(variance_.count()/2, std::complex<Dtype>(eps_), variance_data);
+  caffe_gpu_powx(variance_.count()/2, variance_data, Dtype(0.5),
              variance_data);
   this->SyncComplex_gpu(variance_data, variance_.mutable_gpu_data());
 
@@ -101,7 +99,7 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   caffe_gpu_gemm<std::complex<Dtype> >(CblasNoTrans, CblasNoTrans, channels_ * num,
       spatial_dim, 1, std::complex<Dtype>(1), num_by_chans_data,
       spatial_sum_multiplier_data, std::complex<Dtype>(0), temp_data);
-  caffe_div(top[0]->count()/2, top_data, temp_data, top_data);
+  caffe_gpu_div(top[0]->count()/2, top_data, temp_data, top_data);
   // TODO(cdoersch): The caching is only needed because later in-place layers
   //                 might clobber the data.  Can we skip this if they won't?
   caffe_copy(x_norm_.count()/2, top_data,
@@ -152,9 +150,7 @@ void ComplexBatchNormLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   // dimensions except the channels dimension where required.
 
   // sum(dE/dY \cdot conj(Y))
-  for(int i = 0; i < bottom[0]->count()/2; ++i) {
-    bottom_diff[i] = top_diff[i]*std::conj(top_data[i]);
-  }
+  caffe_gpu_mul(bottom[0]->count()/2, top_data, top_diff, bottom_diff, true);
 
   caffe_gpu_gemv<std::complex<Dtype> >(CblasNoTrans, channels_ * num, spatial_dim, std::complex<Dtype>(1),
       bottom_diff, spatial_sum_multiplier_data, std::complex<Dtype>(0),
@@ -167,9 +163,11 @@ void ComplexBatchNormLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   // 1) Copy mean_data to gamma_diff
   // 2) mean_data[i] *= conj(gamma[i])
 
+  std::complex<Dtype>* mean_data_cpu = this->RealToComplex_mutable_cpu(mean_.mutable_cpu_data());
   for(int i = 0; i < mean_.count()/2; ++i) {
-    mean_data[i] = std::real(mean_data[i]);
+    mean_data_cpu[i] = std::real(mean_data_cpu[i]);
   }
+  this->SyncComplex_cpu(mean_data_cpu, mean_.mutable_cpu_data());
 
 
   // reshape (broadcast) the above

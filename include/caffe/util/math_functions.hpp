@@ -195,7 +195,7 @@ template <typename Dtype>
 void caffe_gpu_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
-void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y, bool conj_a=false);
 
 template <typename Dtype>
 void caffe_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);

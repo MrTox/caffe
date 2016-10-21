@@ -554,9 +554,21 @@ __global__ void mul_kernel(const int n, const cuDoubleComplex* a, const cuDouble
   }
 }
 
+__global__ void conj_mul_kernel(const int n, const cuComplex* a, const cuComplex* b, cuComplex* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = cuCmulf(cuConjf(a[index]), b[index]);
+  }
+}
+
+__global__ void conj_mul_kernel(const int n, const cuDoubleComplex* a, const cuDoubleComplex* b, cuDoubleComplex* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    y[index] = cuCmul(cuConj(a[index]), b[index]);
+  }
+}
+
 template <>
 void caffe_gpu_mul<float>(const int N, const float* a,
-    const float* b, float* y) {
+    const float* b, float* y, bool conj_a) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   mul_kernel<float><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, b, y);
@@ -564,7 +576,7 @@ void caffe_gpu_mul<float>(const int N, const float* a,
 
 template <>
 void caffe_gpu_mul<double>(const int N, const double* a,
-    const double* b, double* y) {
+    const double* b, double* y, bool conj_a) {
   // NOLINT_NEXT_LINE(whitespace/operators)
   mul_kernel<double><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, a, b, y);
@@ -572,18 +584,32 @@ void caffe_gpu_mul<double>(const int N, const double* a,
 
 template <>
 void caffe_gpu_mul<std::complex<float> >(const int N, const std::complex<float>* a, const std::complex<float>* b,
-    std::complex<float>* y) {
-  // NOLINT_NEXT_LINE(whitespace/operators)
-  mul_kernel<cuComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
-      N, (const cuComplex*)a, (const cuComplex*)b, (cuComplex*)y);
+    std::complex<float>* y, bool conj_a) {
+  if (conj_a) {
+    // NOLINT_NEXT_LINE(whitespace/operators)
+    conj_mul_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+        N, (const cuComplex*)a, (const cuComplex*)b, (cuComplex*)y);
+  }
+  else {
+    // NOLINT_NEXT_LINE(whitespace/operators)
+    mul_kernel<cuComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+        N, (const cuComplex*)a, (const cuComplex*)b, (cuComplex*)y);
+  }
 }
 
 template <>
 void caffe_gpu_mul<std::complex<double> >(const int N, const std::complex<double>* a, const std::complex<double>* b,
-    std::complex<double>* y) {
-  // NOLINT_NEXT_LINE(whitespace/operators)
-  mul_kernel<cuDoubleComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
-      N, (const cuDoubleComplex*)a, (const cuDoubleComplex*)b, (cuDoubleComplex*)y);
+    std::complex<double>* y, bool conj_a) {
+  if (conj_a) {
+    // NOLINT_NEXT_LINE(whitespace/operators)
+    conj_mul_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+        N, (const cuDoubleComplex*)a, (const cuDoubleComplex*)b, (cuDoubleComplex*)y);
+  }
+  else {
+    // NOLINT_NEXT_LINE(whitespace/operators)
+    mul_kernel<cuDoubleComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+        N, (const cuDoubleComplex*)a, (const cuDoubleComplex*)b, (cuDoubleComplex*)y);
+  }
 }
 
 template <typename Dtype>
@@ -945,7 +971,6 @@ void caffe_gpu_conj<std::complex<double> >(const int N, const std::complex<doubl
   conj_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, (const cuDoubleComplex*)a, (cuDoubleComplex*)y);
 }
-
 
 DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])
                                       - (x[index] < Dtype(0)));
