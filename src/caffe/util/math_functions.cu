@@ -134,13 +134,14 @@ void caffe_gpu_gemv<std::complex<float> >(const CBLAS_TRANSPOSE TransA, const in
     const std::complex<float> beta, std::complex<float>* y) {
   cublasOperation_t cuTransA;
   if(TransA == CblasNoTrans) {
-    cuTransA = CUBLAS_OP_N;
-  }
-  else if(TransA == CblasTrans){
     cuTransA = CUBLAS_OP_T;
   }
+  else if(TransA == CblasTrans){
+    cuTransA = CUBLAS_OP_N;
+  }
   else {
-    cuTransA = CUBLAS_OP_C;
+//    cuTransA = CUBLAS_OP_C;
+    LOG(FATAL) << "caffe_gpu_gemv currently does not support CblasCTrans or CblasCNoTrans.";
   }
   CUBLAS_CHECK(cublasCgemv(Caffe::cublas_handle(), cuTransA, N, M, (const cuComplex*)&alpha,
       (const cuComplex*)A, N, (const cuComplex*)x, 1, (const cuComplex*)&beta, (cuComplex*)y, 1));
@@ -152,13 +153,14 @@ void caffe_gpu_gemv<std::complex<double> >(const CBLAS_TRANSPOSE TransA, const i
     const std::complex<double> beta, std::complex<double>* y) {
   cublasOperation_t cuTransA;
   if(TransA == CblasNoTrans) {
-    cuTransA = CUBLAS_OP_N;
-  }
-  else if(TransA == CblasTrans){
     cuTransA = CUBLAS_OP_T;
   }
+  else if(TransA == CblasTrans){
+    cuTransA = CUBLAS_OP_N;
+  }
   else {
-    cuTransA = CUBLAS_OP_C;
+//    cuTransA = CUBLAS_OP_C;
+    LOG(FATAL) << "caffe_gpu_gemv currently does not support CblasCTrans or CblasCNoTrans.";
   }
   CUBLAS_CHECK(cublasZgemv(Caffe::cublas_handle(), cuTransA, N, M, (const cuDoubleComplex*)&alpha,
       (const cuDoubleComplex*)A, N, (const cuDoubleComplex*)x, 1, (const cuDoubleComplex*)&beta, (cuDoubleComplex*)y, 1));
@@ -829,7 +831,7 @@ template __global__ void log_kernel(const int n, const double* a, double* y);
 template <>
 __global__ void log_kernel(const int n, const cuComplex* a, cuComplex* y) {
   CUDA_KERNEL_LOOP(index, n) {
-    y[index].x = cuCabsf(a[index]);
+    y[index].x = log(cuCabsf(a[index]));
     y[index].y = atan2f(a[index].y, a[index].x);
   }
 }
@@ -837,7 +839,7 @@ __global__ void log_kernel(const int n, const cuComplex* a, cuComplex* y) {
 template <>
 __global__ void log_kernel(const int n, const cuDoubleComplex* a, cuDoubleComplex* y) {
   CUDA_KERNEL_LOOP(index, n) {
-    y[index].x = cuCabs(a[index]);
+    y[index].x = log(cuCabs(a[index]));
     y[index].y = atan2(a[index].y, a[index].x);
   }
 }
@@ -897,34 +899,34 @@ void caffe_gpu_powx<double>(const int N, const double* a,
 __global__ void powx_kernel(const int n, const cuComplex* a,
     const float alpha, cuComplex* y) {
   CUDA_KERNEL_LOOP(index, n) {
-	// y = a^alpha
-	//   = exp(alpha*log(a))
-	// alpha*log(a) = {alpha*abs(a), alpha*arg(z)}
-	// y = exp(alpha*log(a))
-	//   = {exp(alpha*abs(a)*cos(alpha*arg(z)), exp(alpha*abs(a)*sign(alpha*arg(z))}
-	float exp_alpha_abs_a = expf(alpha * cuCabsf(a[index]));
-	float theta = atan2f(a[index].y, a[index].x);
-	float cos_alpha_theta;
-	float sin_alpha_theta;
-	sincosf(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
-    y[index].x = exp_alpha_abs_a * cos_alpha_theta;
-    y[index].y = exp_alpha_abs_a * sin_alpha_theta;
+    // y = a^alpha
+    //   = exp(alpha*log(a))
+    // alpha*log(a) = {alpha*log(abs(a)), alpha*arg(z)}
+    // y = exp(alpha*log(a))
+    //   = {exp(alpha*log(abs(a))  *cos(alpha*arg(z)), exp(alpha*log(abs(a)) * sin(alpha*arg(z))}
+    float exp_alpha_log_abs_a = expf(alpha * log(cuCabsf(a[index])));
+    float theta = atan2f(a[index].y, a[index].x);
+    float cos_alpha_theta;
+    float sin_alpha_theta;
+    sincosf(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
+    y[index].x = exp_alpha_log_abs_a * cos_alpha_theta;
+    y[index].y = exp_alpha_log_abs_a * sin_alpha_theta;
   }
 }
 
 __global__ void powx_kernel(const int n, const cuDoubleComplex* a,
     const double alpha, cuDoubleComplex* y) {
   CUDA_KERNEL_LOOP(index, n) {
-	// y = a^alpha
-	//   = exp(alpha*log(a))
-	// alpha*log(a) = {alpha*abs(a), alpha*arg(z)}
-	// y = exp(alpha*log(a))
-	//   = {exp(alpha*abs(a)*cos(alpha*arg(z)), exp(alpha*abs(a)*sign(alpha*arg(z))}
-	double exp_alpha_abs_a = expf(alpha * cuCabs(a[index]));
-	double theta = atan2(a[index].y, a[index].x);
-	double cos_alpha_theta;
-	double sin_alpha_theta;
-	sincos(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
+    // y = a^alpha
+    //   = exp(alpha*log(a))
+    // alpha*log(a) = {alpha*abs(a), alpha*arg(z)}
+    // y = exp(alpha*log(a))
+    //   = {exp(alpha*abs(a)*cos(alpha*arg(z)), exp(alpha*abs(a)*sign(alpha*arg(z))}
+    double exp_alpha_abs_a = expf(alpha * cuCabs(a[index]));
+    double theta = atan2(a[index].y, a[index].x);
+    double cos_alpha_theta;
+    double sin_alpha_theta;
+    sincos(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
     y[index].x = exp_alpha_abs_a * cos_alpha_theta;
     y[index].y = exp_alpha_abs_a * sin_alpha_theta;
   }
@@ -970,6 +972,29 @@ void caffe_gpu_conj<std::complex<double> >(const int N, const std::complex<doubl
   // NOLINT_NEXT_LINE(whitespace/operators)
   conj_kernel<<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
       N, (const cuDoubleComplex*)a, (cuDoubleComplex*)y);
+}
+
+template <typename Dtype>
+__global__ void print_kernel(const int n, const Dtype* y) {
+  CUDA_KERNEL_LOOP(index, n) {
+    printf("%d: %f + i%f\n", index, y[index].x, y[index].y);
+  }
+}
+
+template<>
+void caffe_gpu_print<std::complex<float> >(const int N, const std::complex<float>* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  print_kernel<cuComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, (const cuComplex*)Y);
+  cudaDeviceSynchronize();
+}
+
+template<>
+void caffe_gpu_print<std::complex<double> >(const int N, const std::complex<double>* Y) {
+  // NOLINT_NEXT_LINE(whitespace/operators)
+  print_kernel<cuDoubleComplex><<<CAFFE_GET_BLOCKS(N), CAFFE_CUDA_NUM_THREADS>>>(
+      N, (const cuDoubleComplex*)Y);
+  cudaDeviceSynchronize();
 }
 
 DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(sign, y[index] = (Dtype(0) < x[index])

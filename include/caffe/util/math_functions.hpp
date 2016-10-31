@@ -261,6 +261,9 @@ void caffe_gpu_conj(const int n, const Dtype* x, Dtype* y);
 __device__ void caffe_gpu_complex_exp(const cuComplex a, cuComplex &b);
 __device__ void caffe_gpu_complex_exp(const cuDoubleComplex a, cuDoubleComplex &b);
 
+template <typename Dtype>
+void caffe_gpu_print(const int N, const Dtype* Y);
+
 #define DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(name, operation) \
 template<typename Dtype> \
 __global__ void name##_kernel(const int n, const Dtype* x, Dtype* y) { \
