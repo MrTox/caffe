@@ -263,6 +263,7 @@ void ComplexPoolingLayer<float>::Forward_gpu(const vector<Blob<float>*>& bottom,
       const vector<Blob<float>*>& top) {
   const std::complex<float>* bottom_data = this->RealToComplexBottomData_gpu(bottom, 0);
   std::complex<float>* top_data = this->RealToComplexTopData_mutable_gpu(top, 0);
+  int bottom_count = bottom[0]->count()/2;
   int count = top[0]->count()/2;
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
@@ -278,7 +279,7 @@ void ComplexPoolingLayer<float>::Forward_gpu(const vector<Blob<float>*>& bottom,
     }
 
     float* bottom_abs_data = bottom_abs_.mutable_gpu_data();
-    caffe_gpu_abs(count, bottom_data, bottom_abs_data);
+    caffe_gpu_abs(bottom_count, bottom_data, bottom_abs_data);
 
     // NOLINT_NEXT_LINE(whitespace/operators)
     ComplexMaxPoolForward<float, cuComplex><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(

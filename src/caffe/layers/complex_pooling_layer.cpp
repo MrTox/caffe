@@ -146,6 +146,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_cpu(bottom, 0);
   std::complex<Dtype>* top_data = this->RealToComplexTopData_mutable_cpu(top, 0);
+  const int bottom_count = bottom[0]->count()/2;
   const int top_count = top[0]->count()/2;
   // We'll output the mask to top[1] if it's of size >1.
   const bool use_top_mask = top.size() > 1;
@@ -176,7 +177,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
     // Store magnitude of bottom data separately to avoid repeated calls to abs()
     Dtype* bottom_abs_data = bottom_abs_.mutable_cpu_data();
-    caffe_abs(top_count, bottom_data, bottom_abs_data);
+    caffe_abs(bottom_count, bottom_data, bottom_abs_data);
 
     // The main loop
     for (int n = 0; n < bottom[0]->shape(0); ++n) {
@@ -209,6 +210,7 @@ void ComplexPoolingLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         }
         // compute offset
         bottom_data += bottom[0]->offset(offset_indices)/2;
+        bottom_abs_data += bottom[0]->offset(offset_indices)/2;
         top_data += top[0]->offset(offset_indices)/2;
         if (use_top_mask) {
           top_mask += top[0]->offset(offset_indices)/2;
