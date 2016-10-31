@@ -19,10 +19,12 @@ class ComplexLayer : public Layer<Dtype> {
       : Layer<Dtype>(param) {}
   static const std::complex<Dtype>* RealToComplex_cpu(const Dtype* real_data);
   static std::complex<Dtype>* RealToComplex_mutable_cpu(Dtype* real_data);
+  static void SyncComplex_cpu(const std::complex<Dtype>* complex_data, Dtype* real_data);
 
 #ifndef CPU_ONLY
   static const std::complex<Dtype>* RealToComplex_gpu(const Dtype* real_data);
   static std::complex<Dtype>* RealToComplex_mutable_gpu(Dtype* real_data);
+  static void SyncComplex_gpu(const std::complex<Dtype>* complex_data, Dtype* real_data);
 #endif
 
  protected:
@@ -37,7 +39,6 @@ class ComplexLayer : public Layer<Dtype> {
   const std::complex<Dtype>* RealToComplexBlobDiff_cpu(int index);
   std::complex<Dtype>* RealToComplexBlobDiff_mutable_cpu(int index);
 
-  static void SyncComplex_cpu(const std::complex<Dtype>* complex_data, Dtype* real_data);
   void SyncComplexBottomDiff_cpu(const vector<Blob<Dtype>*>& bottom, int index);
   void SyncComplexTopData_cpu(const vector<Blob<Dtype>*>& top, int index);
   void SyncComplexBlobData_cpu(int index);
@@ -55,7 +56,6 @@ class ComplexLayer : public Layer<Dtype> {
   const std::complex<Dtype>* RealToComplexBlobDiff_gpu(int index);
   std::complex<Dtype>* RealToComplexBlobDiff_mutable_gpu(int index);
 
-  static void SyncComplex_gpu(const std::complex<Dtype>* complex_data, Dtype* real_data);
   void SyncComplexBottomDiff_gpu(const vector<Blob<Dtype>*>& bottom, int index);
   void SyncComplexTopData_gpu(const vector<Blob<Dtype>*>& top, int index);
   void SyncComplexBlobData_gpu(int index);
