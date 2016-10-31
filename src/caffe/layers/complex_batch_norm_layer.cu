@@ -38,13 +38,14 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
 
     caffe_gpu_scale(variance_.count()/2, std::complex<Dtype>(scale_factor),
         this->RealToComplexBlobData_gpu(1), variance_data);
-    this->SyncComplex_gpu(variance_data, mean_.mutable_gpu_data());
+    this->SyncComplex_gpu(variance_data, variance_.mutable_gpu_data());
   } else {
     // compute mean
     caffe_gpu_gemv<std::complex<Dtype> >(CblasNoTrans, channels_ * num, spatial_dim,
         std::complex<Dtype>(1. / (num * spatial_dim)), bottom_data,
         spatial_sum_multiplier_data, std::complex<Dtype>(0),
         num_by_chans_data);
+
     caffe_gpu_gemv<std::complex<Dtype> >(CblasTrans, num, channels_, std::complex<Dtype>(1),
         num_by_chans_data, batch_sum_multiplier_data, std::complex<Dtype>(0),
         mean_data);
@@ -86,10 +87,13 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
     this->SyncComplexBlobData_gpu(1);
   }
 
+
   // normalize variance
   caffe_gpu_add_scalar(variance_.count()/2, std::complex<Dtype>(eps_), variance_data);
+
   caffe_gpu_powx(variance_.count()/2, variance_data, Dtype(0.5),
              variance_data);
+
   this->SyncComplex_gpu(variance_data, variance_.mutable_gpu_data());
 
   // replicate variance to input size
@@ -99,6 +103,7 @@ void ComplexBatchNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& botto
   caffe_gpu_gemm<std::complex<Dtype> >(CblasNoTrans, CblasNoTrans, channels_ * num,
       spatial_dim, 1, std::complex<Dtype>(1), num_by_chans_data,
       spatial_sum_multiplier_data, std::complex<Dtype>(0), temp_data);
+
   caffe_gpu_div(top[0]->count()/2, top_data, temp_data, top_data);
   // TODO(cdoersch): The caching is only needed because later in-place layers
   //                 might clobber the data.  Can we skip this if they won't?

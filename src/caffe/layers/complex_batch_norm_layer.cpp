@@ -114,7 +114,7 @@ void ComplexBatchNormLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& botto
 
     caffe_cpu_scale(variance_.count()/2, std::complex<Dtype>(scale_factor),
         this->RealToComplexBlobData_cpu(1), variance_data);
-    this->SyncComplex_cpu(variance_data, mean_.mutable_cpu_data());
+    this->SyncComplex_cpu(variance_data, variance_.mutable_cpu_data());
   } else {
     // compute mean
     caffe_cpu_gemv<std::complex<Dtype> >(CblasNoTrans, channels_ * num, spatial_dim,
