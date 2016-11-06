@@ -50,8 +50,6 @@ void ComplexIGaussianLayer<float>::Forward_gpu(const vector<Blob<float>*>& botto
   ComplexIGaussianForward<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
 		  (const cuComplex*)bottom_data, top_data, this->sigmaSq);
   CUDA_POST_KERNEL_CHECK;
-
-  this->SyncComplexTopData_gpu(top, 0);
 }
 
 template <>
@@ -64,8 +62,6 @@ void ComplexIGaussianLayer<double>::Forward_gpu(const vector<Blob<double>*>& bot
   ComplexIGaussianForward<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(count,
 		  (const cuDoubleComplex*)bottom_data, top_data, this->sigmaSq);
   CUDA_POST_KERNEL_CHECK;
-
-  this->SyncComplexTopData_gpu(top, 0);
 }
 
 template <>

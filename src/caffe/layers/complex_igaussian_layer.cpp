@@ -27,8 +27,6 @@ void ComplexIGaussianLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& botto
   for (int i = 0; i < count; ++i) {
     top_data[i] = 1-std::real(std::exp(-std::conj(bottom_data[i])*bottom_data[i]/(2*this->sigmaSq)));
   }
-
-  this->SyncComplexTopData_cpu(top, 0);
 }
 
 template <typename Dtype>
