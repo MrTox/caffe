@@ -258,6 +258,9 @@ void caffe_gpu_scale(const int n, const Dtype alpha, const Dtype *x, Dtype* y);
 template <typename Dtype>
 void caffe_gpu_conj(const int n, const Dtype* x, Dtype* y);
 
+__device__ void caffe_gpu_complex_pow(const cuComplex a, const float alpha, cuComplex &b);
+__device__ void caffe_gpu_complex_pow(const cuDoubleComplex a, const double alpha, cuDoubleComplex &b);
+
 __device__ void caffe_gpu_complex_exp(const cuComplex a, cuComplex &b);
 __device__ void caffe_gpu_complex_exp(const cuDoubleComplex a, cuDoubleComplex &b);
 

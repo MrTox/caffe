@@ -786,7 +786,7 @@ __global__ void exp_kernel(const int n, const cuComplex* a, cuComplex* b) {
 
 __global__ void exp_kernel(const int n, const cuDoubleComplex* a, cuDoubleComplex* b) {
   CUDA_KERNEL_LOOP(index, n) {
-	caffe_gpu_complex_exp(a[index],b[index]);
+    caffe_gpu_complex_exp(a[index],b[index]);
   }
 }
 
@@ -896,39 +896,47 @@ void caffe_gpu_powx<double>(const int N, const double* a,
       N, a, alpha, y);
 }
 
+__device__ void caffe_gpu_complex_pow(const cuComplex a, const float alpha, cuComplex &b) {
+  // y = a^alpha
+  //   = exp(alpha*log(a))
+  // alpha*log(a) = {alpha*log(abs(a)), alpha*arg(z)}
+  // y = exp(alpha*log(a))
+  //   = {exp(alpha*log(abs(a))  *cos(alpha*arg(z)), exp(alpha*log(abs(a)) * sin(alpha*arg(z))}
+  float exp_alpha_log_abs_a = expf(alpha * log(cuCabsf(a)));
+  float theta = atan2f(a.y, a.x);
+  float cos_alpha_theta;
+  float sin_alpha_theta;
+  sincosf(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
+  b.x = exp_alpha_log_abs_a * cos_alpha_theta;
+  b.y = exp_alpha_log_abs_a * sin_alpha_theta;
+}
+
+__device__ void caffe_gpu_complex_pow(const cuDoubleComplex a, const double alpha, cuDoubleComplex &b) {
+  // y = a^alpha
+  //   = exp(alpha*log(a))
+  // alpha*log(a) = {alpha*abs(a), alpha*arg(z)}
+  // y = exp(alpha*log(a))
+  //   = {exp(alpha*abs(a)*cos(alpha*arg(z)), exp(alpha*abs(a)*sign(alpha*arg(z))}
+  double exp_alpha_abs_a = expf(alpha * cuCabs(a));
+  double theta = atan2(a.y, a.x);
+  double cos_alpha_theta;
+  double sin_alpha_theta;
+  sincos(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
+  b.x = exp_alpha_abs_a * cos_alpha_theta;
+  b.y = exp_alpha_abs_a * sin_alpha_theta;
+}
+
 __global__ void powx_kernel(const int n, const cuComplex* a,
     const float alpha, cuComplex* y) {
   CUDA_KERNEL_LOOP(index, n) {
-    // y = a^alpha
-    //   = exp(alpha*log(a))
-    // alpha*log(a) = {alpha*log(abs(a)), alpha*arg(z)}
-    // y = exp(alpha*log(a))
-    //   = {exp(alpha*log(abs(a))  *cos(alpha*arg(z)), exp(alpha*log(abs(a)) * sin(alpha*arg(z))}
-    float exp_alpha_log_abs_a = expf(alpha * log(cuCabsf(a[index])));
-    float theta = atan2f(a[index].y, a[index].x);
-    float cos_alpha_theta;
-    float sin_alpha_theta;
-    sincosf(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
-    y[index].x = exp_alpha_log_abs_a * cos_alpha_theta;
-    y[index].y = exp_alpha_log_abs_a * sin_alpha_theta;
+    caffe_gpu_complex_pow(a[index], alpha, y[index]);
   }
 }
 
 __global__ void powx_kernel(const int n, const cuDoubleComplex* a,
     const double alpha, cuDoubleComplex* y) {
   CUDA_KERNEL_LOOP(index, n) {
-    // y = a^alpha
-    //   = exp(alpha*log(a))
-    // alpha*log(a) = {alpha*abs(a), alpha*arg(z)}
-    // y = exp(alpha*log(a))
-    //   = {exp(alpha*abs(a)*cos(alpha*arg(z)), exp(alpha*abs(a)*sign(alpha*arg(z))}
-    double exp_alpha_abs_a = expf(alpha * cuCabs(a[index]));
-    double theta = atan2(a[index].y, a[index].x);
-    double cos_alpha_theta;
-    double sin_alpha_theta;
-    sincos(alpha*theta, &sin_alpha_theta, &cos_alpha_theta);
-    y[index].x = exp_alpha_abs_a * cos_alpha_theta;
-    y[index].y = exp_alpha_abs_a * sin_alpha_theta;
+    caffe_gpu_complex_pow(a[index], alpha, y[index]);
   }
 }
 
