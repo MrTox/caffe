@@ -23,8 +23,12 @@ void ComplexIGaussianPhaseLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& 
 
   for (int i = 0; i < count; ++i) {
     std::complex<Dtype> z = bottom_data[i];
+
     Dtype g = 1 - std::real(std::exp(-std::conj(z)*z/(2*this->sigmaSq)));
-    std::complex<Dtype> p = z / std::abs(z);
+
+    Dtype z_mag = std::abs(z) + 1e-14;
+    std::complex<Dtype> p = z / z_mag;
+
     top_data[i] = g*p;
   }
 
@@ -45,16 +49,14 @@ void ComplexIGaussianPhaseLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>&
     for (int i = 0; i < count; ++i) {
       std::complex<Dtype> z = bottom_data[i];
       Dtype g = 1 - std::real(std::exp(-std::conj(z)*z/(2*this->sigmaSq)));
+
+      Dtype abs_z = std::abs(z) + 1e-14;
+      std::complex<Dtype> p = z/abs_z;
+
       std::complex<Dtype> dgdcz = (1-g)*z/(2*this->sigmaSq);
       std::complex<Dtype> dgdz = std::conj(dgdcz);
-      Dtype abs_z = std::abs(z);
-      std::complex<Dtype> p = z/abs_z;
       std::complex<Dtype> dpdz = 1 / (2*abs_z);
-      std::complex<Dtype> dpdcz = Dtype(-0.5) * std::pow(std::conj(z),-3/2) * std::sqrt(z);
-//      std::complex<Dtype> dpdcz = std::pow(std::conj(z),-3/2) * std::sqrt(z);
-//      Dtype neghalf = -0.5;
-//      dpdcz = neghalf*dpdcz;
-//      std::complex<Dtype> dpdcz = -std::pow(std::conj(z),-3/2) * std::sqrt(z);
+      std::complex<Dtype> dpdcz = Dtype(-0.5) * z / (std::conj(z)*abs_z);
       std::complex<Dtype> dfdz = p*dgdz + g*dpdz;
       std::complex<Dtype> dfdcz = p*dgdcz + g*dpdcz;
       bottom_diff[i] = std::conj(top_diff[i])*dfdcz + top_diff[i]*std::conj(dfdz);
