@@ -24,7 +24,7 @@ class ComplexIGaussianLayer : public ComplexLayer<Dtype> {
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
-  virtual inline const char* type() const { return "ComplexMagnitude"; }
+  virtual inline const char* type() const { return "ComplexIGaussian"; }
 
  protected:
   Dtype sigmaSq;
