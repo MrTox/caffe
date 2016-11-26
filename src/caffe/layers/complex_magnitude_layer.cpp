@@ -1,4 +1,5 @@
 #include <vector>
+#include <limits>
 
 #include "caffe/layers/complex_magnitude_layer.hpp"
 
@@ -43,7 +44,7 @@ void ComplexMagnitudeLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const int count = top[0]->count();
 
     for (int i = 0; i < count; ++i) {
-      bottom_diff[i] = top_diff[i]*bottom_data[i]/top_data[i];
+      bottom_diff[i] = top_diff[i]*bottom_data[i]/(top_data[i] + std::numeric_limits<Dtype>::min());
     }
 
     this->SyncComplexBlobDiff_cpu(0);
