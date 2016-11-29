@@ -46,10 +46,10 @@ void ComplexCardioidLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       Dtype theta = std::arg(z);
 
       std::complex<Dtype> dfdz = Dtype(0.5) + Dtype(0.5*std::cos(theta)) +
-          std::complex<Dtype>(0,1)/Dtype(4) * std::sin(theta) / (z + Dtype(1e-14));
+          std::complex<Dtype>(0,1)/Dtype(4) * std::sin(theta);
 
-      std::complex<Dtype> dfdcz = std::complex<Dtype>(0,-1)/Dtype(4) * std::sin(std::arg(z)) /
-          (std::conj(z) + Dtype(1e-14));
+      std::complex<Dtype> dfdcz = std::complex<Dtype>(0,-1)/Dtype(4) * std::sin(std::arg(z)) * 
+          z / (std::conj(z) + Dtype(1e-14));
 
       bottom_diff[i] = std::conj(top_diff[i])*dfdcz + top_diff[i]*std::conj(dfdz);
     }

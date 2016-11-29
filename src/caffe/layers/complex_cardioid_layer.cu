@@ -29,16 +29,13 @@ __global__ void ComplexCardioidBackward(const int n, const cuComplex* bottom,
 
     float theta = atan2f(z.y, z.x);
 
-    cuComplex dfdz = cuCaddf(
-        make_cuFloatComplex(0.5f + 0.5f*cosf(theta), 0),
-        cuCdivf(
-            make_cuFloatComplex(0, 0.25f*sinf(theta)),
-            cuCaddf(z, make_cuFloatComplex(1e-14,0))
-            )
-        );
+    cuComplex dfdz = make_cuFloatComplex(0.5f + 0.5f*cosf(theta), 0.25f*sinf(theta));
 
     cuComplex dfdcz = cuCdivf(
-        make_cuFloatComplex(0, -0.25f*sinf(theta)),
+        cuCmulf(
+            make_cuFloatComplex(0, -0.25f*sinf(theta)),
+            z
+            ),
         cuCaddf(cuConjf(z), make_cuFloatComplex(1e-14,0))
         );
 
@@ -56,16 +53,13 @@ __global__ void ComplexCardioidBackward(const int n, const cuDoubleComplex* bott
 
     double theta = atan2(z.y, z.x);
 
-    cuDoubleComplex dfdz = cuCadd(
-        make_cuDoubleComplex(0.5 + 0.5*cos(theta), 0),
-        cuCdiv(
-            make_cuDoubleComplex(0, 0.25*sin(theta)),
-            cuCadd(z, make_cuDoubleComplex(1e-14,0))
-            )
-        );
+    cuDoubleComplex dfdz = make_cuDoubleComplex(0.5 + 0.5*cos(theta), 0.25*sin(theta));
 
     cuDoubleComplex dfdcz = cuCdiv(
-        make_cuDoubleComplex(0, -0.25*sin(theta)),
+        cuCmul(
+            make_cuDoubleComplex(0, -0.25*sin(theta)),
+            z
+            ),
         cuCadd(cuConj(z), make_cuDoubleComplex(1e-14,0))
         );
 
