@@ -16,7 +16,7 @@ void ComplexInnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bo
     caffe_gpu_gemv<std::complex<Dtype> >(CblasNoTrans, N_, K_, std::complex<Dtype>(1),
         weight, bottom_data, std::complex<Dtype>(0), top_data);
     if (bias_term_) {
-      caffe_gpu_axpy<std::complex<Dtype> >(N_, this->RealToComplex_gpu(bias_multiplier_.gpu_data())[0],
+      caffe_gpu_axpy<std::complex<Dtype> >(N_, this->RealToComplex_cpu(bias_multiplier_.cpu_data())[0],
           this->RealToComplexBlobData_gpu(1), top_data);
     }
   } else {
