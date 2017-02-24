@@ -27,16 +27,16 @@ __global__ void ComplexIGaussianForward(const int n, const cuDoubleComplex* bott
 __global__ void ComplexIGaussianBackward(const int n, const cuComplex* bottom, const float* top, const float* top_diff,
 		cuComplex* bottom_diff, const float sigmaSq) {
   CUDA_KERNEL_LOOP(index, n) {
-	  bottom_diff[index].x = top_diff[index]*(1-top[index])*bottom[index].x/(2*sigmaSq);
-	  bottom_diff[index].y = top_diff[index]*(1-top[index])*bottom[index].y/(2*sigmaSq);
+	  bottom_diff[index].x = top_diff[index]*(1-top[index])*bottom[index].x/(sigmaSq);
+	  bottom_diff[index].y = top_diff[index]*(1-top[index])*bottom[index].y/(sigmaSq);
   }
 }
 
 __global__ void ComplexIGaussianBackward(const int n, const cuDoubleComplex* bottom, const double* top, const double* top_diff,
 		cuDoubleComplex* bottom_diff, const double sigmaSq) {
   CUDA_KERNEL_LOOP(index, n) {
-	  bottom_diff[index].x = top_diff[index]*(1-top[index])*bottom[index].x/(2*sigmaSq);
-	  bottom_diff[index].y = top_diff[index]*(1-top[index])*bottom[index].y/(2*sigmaSq);
+	  bottom_diff[index].x = top_diff[index]*(1-top[index])*bottom[index].x/(sigmaSq);
+	  bottom_diff[index].y = top_diff[index]*(1-top[index])*bottom[index].y/(sigmaSq);
   }
 }
 

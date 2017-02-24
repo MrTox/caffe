@@ -42,7 +42,7 @@ void ComplexIGaussianLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const int count = top[0]->count();
 
     for (int i = 0; i < count; ++i) {
-      bottom_diff[i] = top_diff[i]*(1-top_data[i])*bottom_data[i]/(2*this->sigmaSq);
+      bottom_diff[i] = top_diff[i]*(1-top_data[i])*bottom_data[i]/(this->sigmaSq);
     }
 
     this->SyncComplexBlobDiff_cpu(0);
