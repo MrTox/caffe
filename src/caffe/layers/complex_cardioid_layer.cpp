@@ -23,7 +23,7 @@ void ComplexCardioidLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom
 
   for (int i = 0; i < count; ++i) {
     std::complex<Dtype> z = bottom_data[i];
-    top_data[i] = 1/2 * (1 + std::cos(std::arg(z))) * z;
+    top_data[i] = std::complex<Dtype>(0.5 * (1 + std::cos(std::arg(z)))) * z;
   }
 
   this->SyncComplexTopData_cpu(top, 0);
