@@ -17,7 +17,8 @@ class ComplexSiglogLayer : public ComplexLayer<Dtype> {
  public:
   explicit ComplexSiglogLayer(const LayerParameter& param)
       : ComplexLayer<Dtype>(param) {}
-
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
@@ -35,6 +36,15 @@ class ComplexSiglogLayer : public ComplexLayer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   // virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
   //     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  ///parameters s,d,r,c
+  Dtype d;
+  Dtype s;
+  Dtype r;
+  Dtype c;
+
+
+
 };
 
 }  // namespace caffe

@@ -100,9 +100,9 @@ void ComplexDropoutLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 }
 
 
-#ifdef CPU_ONLY
-STUB_GPU(ComplexDropoutLayer);
-#endif
+// #ifdef CPU_ONLY
+// STUB_GPU(ComplexDropoutLayer);
+// #endif
 
 INSTANTIATE_CLASS(ComplexDropoutLayer);
 REGISTER_LAYER_CLASS(ComplexDropout);

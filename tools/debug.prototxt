@@ -1,0 +1,23 @@
+layer {
+  name: "data"
+  type: "DummyData"
+  top: "data"
+  dummy_data_param {
+    shape {
+      dim: 1
+      dim: 2
+    }
+    data_filler {
+      type: "constant"
+      value: 1
+    }
+  }
+}
+
+layer {
+  name: "act1"
+  type: "ComplexSiglog"
+  bottom: "data"
+  top: "act1"
+}
+

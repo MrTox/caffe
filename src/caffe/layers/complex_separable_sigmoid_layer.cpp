@@ -74,9 +74,9 @@ void ComplexSeparableSigmoidLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*
 }
 
 
-#ifdef CPU_ONLY
-STUB_GPU(ComplexSeparableSigmoidLayer);
-#endif
+// #ifdef CPU_ONLY
+// STUB_GPU(ComplexSeparableSigmoidLayer);
+// #endif
 
 INSTANTIATE_CLASS(ComplexSeparableSigmoidLayer);
 REGISTER_LAYER_CLASS(ComplexSeparableSigmoid);
