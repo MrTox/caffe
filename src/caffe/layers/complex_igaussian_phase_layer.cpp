@@ -1,4 +1,5 @@
 #include <vector>
+#include <limits>
 
 #include "caffe/layers/complex_igaussian_phase_layer.hpp"
 
@@ -19,6 +20,8 @@ void ComplexIGaussianPhaseLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& 
   const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_cpu(bottom, 0);
   std::complex<Dtype>* top_data = this->RealToComplexTopData_mutable_cpu(top,0);
 
+  Dtype eps = std::numeric_limits<float>::min();
+
   const int count = top[0]->count()/2;
 
   for (int i = 0; i < count; ++i) {
@@ -26,8 +29,8 @@ void ComplexIGaussianPhaseLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& 
 
     Dtype g = 1 - std::real(std::exp(-std::conj(z)*z/(2*this->sigmaSq)));
 
-    Dtype z_mag = std::abs(z) + 1e-14;
-    std::complex<Dtype> p = z / z_mag;
+    Dtype z_mag = std::abs(z);
+    std::complex<Dtype> p = z / (z_mag + eps);
 
     top_data[i] = g*p;
   }
@@ -44,19 +47,21 @@ void ComplexIGaussianPhaseLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>&
     const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_cpu(bottom, 0);
     std::complex<Dtype>* bottom_diff = this->RealToComplexBottomDiff_mutable_cpu(bottom, 0);
 
+    Dtype eps = std::numeric_limits<float>::min();
+
     const int count = top[0]->count()/2;
 
     for (int i = 0; i < count; ++i) {
       std::complex<Dtype> z = bottom_data[i];
       Dtype g = 1 - std::real(std::exp(-std::conj(z)*z/(2*this->sigmaSq)));
 
-      Dtype abs_z = std::abs(z) + 1e-14;
-      std::complex<Dtype> p = z/abs_z;
+      Dtype abs_z = std::abs(z);
+      std::complex<Dtype> p = z/(abs_z + eps);
 
       std::complex<Dtype> dgdcz = (1-g)*z/(2*this->sigmaSq);
       std::complex<Dtype> dgdz = std::conj(dgdcz);
-      std::complex<Dtype> dpdz = 1 / (2*abs_z);
-      std::complex<Dtype> dpdcz = Dtype(-0.5) * z / (std::conj(z)*abs_z);
+      std::complex<Dtype> dpdz = 1 / (2*abs_z + eps);
+      std::complex<Dtype> dpdcz = Dtype(-0.5) * z / (std::conj(z)*abs_z + eps);
       std::complex<Dtype> dfdz = p*dgdz + g*dpdz;
       std::complex<Dtype> dfdcz = p*dgdcz + g*dpdcz;
       bottom_diff[i] = std::conj(top_diff[i])*dfdcz + top_diff[i]*std::conj(dfdz);
