@@ -364,9 +364,9 @@ void ComplexPoolingLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
 
 // TODO Complex Uncomment when we implement Forward_gpu and Backward_gpu
-//#ifdef CPU_ONLY
-//STUB_GPU(ComplexPoolingLayer);
-//#endif
+#ifdef CPU_ONLY
+STUB_GPU(ComplexPoolingLayer);
+#endif
 
 INSTANTIATE_CLASS(ComplexPoolingLayer);
 REGISTER_LAYER_CLASS(ComplexPooling);
