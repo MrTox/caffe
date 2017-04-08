@@ -38,30 +38,56 @@ int solver() {
       solver(caffe::SolverRegistry<float>::CreateSolver(solver_param));
 
 //  solver->Restore(FLAGS_snapshot.c_str());
+
+  return 0;
 }
 
+float mean(int N, const float* data) {
+  float sum = 0;
+  for(int i = 0; i < N; i++) {
+    sum += data[i];
+  }
+  float mean = sum/N;
+  return mean;
+}
 
 // net: Load a network
 int net() {
-  //string net_filename = "examples/debug/temp.prototxt";
+  Caffe::set_mode(Caffe::CPU);
+
   string net_filename = "debug.prototxt";
 
   Net<float> net(net_filename, caffe::TRAIN);
 //  caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
 
-  //float loss;
-  //const vector<Blob<float>*>& result = net.Forward(&loss);
-  const vector<Blob<float>*>& results = net.Forward();
-  //LOG(INFO) << "PAT loss: " << loss;
-  
-  const float* results_data = results[0]->cpu_data();
-  printf("%f + i%f\n", results_data[0], results_data[1]);
+  float loss;
+//  const vector<Blob<float>*>& result = net.Forward(&loss);
+//  LOG(INFO) << "PAT loss: " << loss;
 
-  //net.Forward(&loss);
-  //LOG(INFO) << "PAT loss: " << loss;
+  net.Forward(&loss);
+  LOG(INFO) << "PAT loss: " << loss;
 
-  //LOG(INFO) << "Backward...";
-  //net.Backward();
+  LOG(INFO) << "Backward...";
+  net.Backward();
+
+  std::cout << std::endl;
+
+  for(int i = 0; i < net.blobs().size(); i++) {
+    std::cout << "Blob " << net.blob_names()[i] << ": "
+//        << "shape = " << net.blobs()[i]->shape_string()
+        << "mean = " << mean(net.blobs()[i]->count(), net.blobs()[i]->cpu_data())
+        << std::endl;
+  }
+
+  std::cout << std::endl;
+
+  for(int i = 0; i < net.blobs().size(); i++) {
+    std::cout << "Blob " << net.blob_names()[i] << ": "
+        << "diff mean = " << mean(net.blobs()[i]->count(), net.blobs()[i]->cpu_diff())
+        << std::endl;
+  }
+
+  std::cout << std::endl;
 
   LOG(INFO) << "Finished.";
 
