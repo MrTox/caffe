@@ -89,6 +89,31 @@ int net() {
 
   std::cout << std::endl;
 
+  for(int i = 0; i < net.layers().size(); i++) {
+    std::vector<shared_ptr<Blob<float> > > params = net.layers()[i]->blobs();
+
+    for(int j = 0; j < params.size(); j++) {
+      std::cout << "Param " << net.layer_names()[i] << "[" << j << "]: "
+//          << "shape = " << params[j]->shape_string()
+        << "mean = " << mean(params[j]->count(), params[j]->cpu_data())
+        << std::endl;
+    }
+  }
+
+  std::cout << std::endl;
+
+  for(int i = 0; i < net.layers().size(); i++) {
+    std::vector<shared_ptr<Blob<float> > > params = net.layers()[i]->blobs();
+
+    for(int j = 0; j < params.size(); j++) {
+      std::cout << "Param " << net.layer_names()[i] << "[" << j << "]: "
+        << "diff mean = " << mean(params[j]->count(), params[j]->cpu_diff())
+        << std::endl;
+    }
+  }
+
+  std::cout << std::endl;
+
   LOG(INFO) << "Finished.";
 
   return 0;

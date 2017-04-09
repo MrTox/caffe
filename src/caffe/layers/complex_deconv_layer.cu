@@ -44,9 +44,7 @@ void ComplexDeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& 
   if(any_propagate_down) {
     conj_weight_data = this->RealToComplex_mutable_gpu(this->conj_weight_.mutable_gpu_data());
     const std::complex<Dtype>* weight_data = this->RealToComplexBlobData_gpu(0);
-    for(int i = 0; i < conj_weight_.count()/2; ++i) {
-      conj_weight_data[i] = std::conj(weight_data[i]);
-    }
+    caffe_gpu_conj<std::complex<Dtype> >(conj_weight_.count()/2, weight_data, conj_weight_data);
   }
   if (this->param_propagate_down_[0]) {
     conj_bottom_data = this->RealToComplex_mutable_gpu(this->conj_bottom_.mutable_gpu_data());
@@ -88,9 +86,7 @@ void ComplexDeconvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& 
         if (this->param_propagate_down_[0]) {
           // MKL and Xcode Accelerate don't support a conjugate-no-transform operation (AtlasConj)
           // so we will manuall make a conjugate copy.
-          for(int i = 0; i < this->bottom_dim_; ++i) {
-            conj_bottom_data[i] = std::conj(bottom_data[i + n * this->bottom_dim_]);
-          }
+          caffe_gpu_conj<std::complex<Dtype> >(this->bottom_dim_, bottom_data + n*this->bottom_dim_, conj_bottom_data);
 
           bool conj_top_diff = false;
           this->weight_gpu_gemm(top_diff + n * this->top_dim_,
