@@ -296,7 +296,7 @@ void ComplexPoolingLayer<float>::Forward_gpu(const vector<Blob<float>*>& bottom,
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     ComplexAvePoolForward<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, (const cuComplex*)bottom_data, bottom[0]->num(), channels_,
+        count, (const cuComplex*)bottom_data, bottom[0]->shape(0), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, (cuComplex*)top_data);
     this->SyncComplexTopData_gpu(top, 0);
@@ -310,7 +310,7 @@ void ComplexPoolingLayer<float>::Forward_gpu(const vector<Blob<float>*>& bottom,
       // NOLINT_NEXT_LINE(whitespace/operators)
       ComplexStoPoolForwardTrain<<<CAFFE_GET_BLOCKS(count),
                                    CAFFE_CUDA_NUM_THREADS>>>(
-          count, (const cuComplex*)bottom_data, bottom[0]->num(), channels_,
+          count, (const cuComplex*)bottom_data, bottom[0]->shape(0), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
           kernel_w_, stride_h_, stride_w_,
           (cuComplex*)rand_idx_data, (cuComplex*)top_data);
@@ -319,7 +319,7 @@ void ComplexPoolingLayer<float>::Forward_gpu(const vector<Blob<float>*>& bottom,
       // NOLINT_NEXT_LINE(whitespace/operators)
       ComplexStoPoolForwardTest<<<CAFFE_GET_BLOCKS(count),
                                   CAFFE_CUDA_NUM_THREADS>>>(
-          count, (const cuComplex*)bottom_data, bottom[0]->num(), channels_,
+          count, (const cuComplex*)bottom_data, bottom[0]->shape(0), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
           kernel_w_, stride_h_, stride_w_, (cuComplex*)top_data);
     }
@@ -368,7 +368,7 @@ void ComplexPoolingLayer<double>::Forward_gpu(const vector<Blob<double>*>& botto
   case PoolingParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     ComplexAvePoolForward<<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, (const cuDoubleComplex*)bottom_data, bottom[0]->num(), channels_,
+        count, (const cuDoubleComplex*)bottom_data, bottom[0]->shape(0), channels_,
         height_, width_, pooled_height_, pooled_width_, kernel_h_,
         kernel_w_, stride_h_, stride_w_, pad_h_, pad_w_, (cuDoubleComplex*)top_data);
     this->SyncComplexTopData_gpu(top, 0);
@@ -382,7 +382,7 @@ void ComplexPoolingLayer<double>::Forward_gpu(const vector<Blob<double>*>& botto
       // NOLINT_NEXT_LINE(whitespace/operators)
       ComplexStoPoolForwardTrain<<<CAFFE_GET_BLOCKS(count),
                                    CAFFE_CUDA_NUM_THREADS>>>(
-          count, (const cuDoubleComplex*)bottom_data, bottom[0]->num(), channels_,
+          count, (const cuDoubleComplex*)bottom_data, bottom[0]->shape(0), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
           kernel_w_, stride_h_, stride_w_,
           (cuDoubleComplex*)rand_idx_data, (cuDoubleComplex*)top_data);
@@ -391,7 +391,7 @@ void ComplexPoolingLayer<double>::Forward_gpu(const vector<Blob<double>*>& botto
       // NOLINT_NEXT_LINE(whitespace/operators)
       ComplexStoPoolForwardTest<<<CAFFE_GET_BLOCKS(count),
                                   CAFFE_CUDA_NUM_THREADS>>>(
-          count, (const cuDoubleComplex*)bottom_data, bottom[0]->num(), channels_,
+          count, (const cuDoubleComplex*)bottom_data, bottom[0]->shape(0), channels_,
           height_, width_, pooled_height_, pooled_width_, kernel_h_,
           kernel_w_, stride_h_, stride_w_, (cuDoubleComplex*)top_data);
     }
