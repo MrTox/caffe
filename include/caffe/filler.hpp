@@ -262,6 +262,32 @@ class BilinearFiller : public Filler<Dtype> {
 };
 
 /**
+ * @brief Fill the first half of the blob with -1 and the second half with 1.
+ *
+ * Note: does not pay any attention to dimensions.
+ */
+template <typename Dtype>
+class DiffFiller : public Filler<Dtype> {
+ public:
+  explicit DiffFiller(const FillerParameter& param)
+      : Filler<Dtype>(param) {}
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
+    int center = floor(blob->count() / 2.);
+    for (int i = 0; i < blob->count(); ++i) {
+      if (i < center) {
+        data[i] = -1;
+      }
+      else {
+        data[i] = 1;
+      }
+    }
+    CHECK_EQ(this->filler_param_.sparse(), -1)
+         << "Sparsity not supported by this Filler.";
+  }
+};
+
+/**
  * @brief Get a specific filler from the specification given in FillerParameter.
  *
  * Ideally this would be replaced by a factory pattern, but we will leave it
@@ -284,6 +310,8 @@ Filler<Dtype>* GetFiller(const FillerParameter& param) {
     return new MSRAFiller<Dtype>(param);
   } else if (type == "bilinear") {
     return new BilinearFiller<Dtype>(param);
+  } else if (type == "diff") {
+    return new DiffFiller<Dtype>(param);
   } else {
     CHECK(false) << "Unknown filler name: " << param.type();
   }
