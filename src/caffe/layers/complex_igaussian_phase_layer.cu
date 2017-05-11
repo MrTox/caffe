@@ -132,7 +132,7 @@ void ComplexIGaussianPhaseLayer<float>::Backward_gpu(const vector<Blob<float>*>&
     		this->sigmaSq);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 
@@ -151,7 +151,7 @@ void ComplexIGaussianPhaseLayer<double>::Backward_gpu(const vector<Blob<double>*
     		this->sigmaSq);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 

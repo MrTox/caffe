@@ -149,7 +149,7 @@ void ComplexSiglogLayer<float>::Backward_gpu(const vector<Blob<float>*>& top,
         this->d, this->s, this->r, this->c);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 
@@ -168,7 +168,7 @@ void ComplexSiglogLayer<double>::Backward_gpu(const vector<Blob<double>*>& top,
         this->d, this->s, this->r, this->c);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 

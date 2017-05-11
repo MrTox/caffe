@@ -111,7 +111,7 @@ void ComplexCardioidLayer<float>::Backward_gpu(const vector<Blob<float>*>& top,
     		(const cuComplex*)bottom_data, (const cuComplex*)top_diff, (cuComplex*)bottom_diff);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 
@@ -129,7 +129,7 @@ void ComplexCardioidLayer<double>::Backward_gpu(const vector<Blob<double>*>& top
     		(const cuDoubleComplex*)bottom_data, (const cuDoubleComplex*)top_diff, (cuDoubleComplex*)bottom_diff);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 

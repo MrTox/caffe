@@ -94,7 +94,7 @@ void ComplexDropoutLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       }
       
       //include to sync float array with complex float array (in case we made a copy)
-      this->SyncComplexBlobDiff_cpu(0);
+      this->SyncComplexBottomDiff_cpu(bottom, 0);
 
   }
 }

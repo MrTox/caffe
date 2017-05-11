@@ -127,7 +127,7 @@ void ComplexSeparableSigmoidLayer<float>::Backward_gpu(const vector<Blob<float>*
     		(const cuComplex*)top_data, (const cuComplex*)top_diff, (cuComplex*)bottom_diff);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 
@@ -145,7 +145,7 @@ void ComplexSeparableSigmoidLayer<double>::Backward_gpu(const vector<Blob<double
     		(const cuDoubleComplex*)top_data, (const cuDoubleComplex*)top_diff, (cuDoubleComplex*)bottom_diff);
     CUDA_POST_KERNEL_CHECK;
 
-    this->SyncComplexBlobDiff_gpu(0);
+    this->SyncComplexBottomDiff_gpu(bottom, 0);
   }
 }
 

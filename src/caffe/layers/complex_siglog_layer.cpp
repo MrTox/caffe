@@ -126,7 +126,7 @@ void ComplexSiglogLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
        bottom_diff[i] = std::conj(top_diff[i])*dfdcz + top_diff[i]*std::conj(dfdz);
     }
 
-    this->SyncComplexBlobDiff_cpu(0);
+    this->SyncComplexBottomDiff_cpu(bottom, 0);
   }
 }
 
