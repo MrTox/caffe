@@ -11,12 +11,12 @@ void ComplexInnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bo
     const vector<Blob<Dtype>*>& top) {
   const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_gpu(bottom, 0);
   std::complex<Dtype>* top_data = this->RealToComplexTopData_mutable_gpu(top, 0);
-  const std::complex<Dtype>* weight = this->RealToComplexBlobData_cpu(0);
+  const std::complex<Dtype>* weight = this->RealToComplexBlobData_gpu(0);
   if (M_ == 1) {
     caffe_gpu_gemv<std::complex<Dtype> >(CblasNoTrans, N_, K_, std::complex<Dtype>(1),
         weight, bottom_data, std::complex<Dtype>(0), top_data);
     if (bias_term_) {
-      caffe_gpu_axpy<std::complex<Dtype> >(N_, this->RealToComplex_cpu(bias_multiplier_.cpu_data())[0],
+      caffe_gpu_axpy<std::complex<Dtype> >(N_, this->RealToComplex_gpu(bias_multiplier_.gpu_data())[0],
           this->RealToComplexBlobData_gpu(1), top_data);
     }
   } else {
@@ -39,7 +39,7 @@ void ComplexInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& t
     const vector<Blob<Dtype>*>& bottom) {
   if (this->param_propagate_down_[0]) {
     const std::complex<Dtype>* top_diff = this->RealToComplexTopDiff_gpu(top, 0);
-    const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_cpu(bottom, 0);
+    const std::complex<Dtype>* bottom_data = this->RealToComplexBottomData_gpu(bottom, 0);
     // Gradient with respect to weight
     if (transpose_) {
       caffe_gpu_gemm<std::complex<Dtype> >(CblasConjTrans, CblasNoTrans,
@@ -52,7 +52,7 @@ void ComplexInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& t
       std::complex<Dtype>* conj_bottom_data = this->RealToComplex_mutable_gpu(this->conj_bottom_.mutable_gpu_data());
       caffe_gpu_conj<std::complex<Dtype> >(conj_bottom_.count()/2, bottom_data, conj_bottom_data);
 
-//      caffe_cpu_gemm<std::complex<Dtype> >(CblasTrans, AtlasConj,
+//      caffe_gpu_gemm<std::complex<Dtype> >(CblasTrans, AtlasConj,
       caffe_gpu_gemm<std::complex<Dtype> >(CblasTrans, CblasNoTrans,
           N_, K_, M_,
           std::complex<Dtype>(1), top_diff, conj_bottom_data,
@@ -83,7 +83,7 @@ void ComplexInnerProductLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& t
       const std::complex<Dtype>* weight_data = this->RealToComplexBlobData_gpu(0);
       caffe_gpu_conj<std::complex<Dtype> >(conj_weight_.count()/2, weight_data, conj_weight_data);
 
-//      caffe_cpu_gemm<std::complex<Dtype> >(CblasNoTrans, AtlasConj,
+//      caffe_gpu_gemm<std::complex<Dtype> >(CblasNoTrans, AtlasConj,
       caffe_gpu_gemm<std::complex<Dtype> >(CblasNoTrans, CblasNoTrans,
           M_, K_, N_,
          std::complex<Dtype>(1), top_diff, conj_weight_data,
