@@ -53,7 +53,7 @@ __global__ void ComplexSiglogBackward(const int n, const cuComplex* bottom,
     // Useful temp variable
     float c_r_sz_d = c + 1.0/r * sz_to_d;
 
-    float dfdz_numer = (c_r_sz_d)*s + s*(d/(2*r) * s_to_d * z_to_d);
+    float dfdz_numer = (c_r_sz_d)*s - s*(d/(2*r) * s_to_d * z_to_d);
     float dfdz_denom = c_r_sz_d * c_r_sz_d + 1e-14;
     cuComplex dfdz = make_cuFloatComplex(dfdz_numer/dfdz_denom, 0);
 
