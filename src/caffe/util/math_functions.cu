@@ -936,7 +936,6 @@ void caffe_gpu_powx<double>(const int N, const double* a,
       N, a, alpha, y);
 }
 
-template <typename Dtype>
 __device__ void caffe_gpu_complex_pow(const cuComplex a, const float alpha, cuComplex &b) {
   // y = a^alpha
   //   = exp(alpha*log(a))
