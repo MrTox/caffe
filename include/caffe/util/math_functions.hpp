@@ -98,11 +98,14 @@ template <typename Dtype>
 void caffe_abs(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype>
-Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
+void caffe_abs(const int n, const std::complex<Dtype>* a, Dtype* y);
+
+template <typename Dtype>
+Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y, const bool conj_x = true);
 
 template <typename Dtype>
 Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
-    const Dtype* y, const int incy);
+    const Dtype* y, const int incy, const bool conj_x = true);
 
 // Returns the sum of the absolute values of the elements of vector x
 template <typename Dtype>
@@ -200,13 +203,16 @@ template <typename Dtype>
 void caffe_gpu_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
-void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y, bool conj_a=false);
 
 template <typename Dtype>
 void caffe_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_abs(const int n, const Dtype* a, Dtype* y);
+
+template <typename Dtype>
+void caffe_gpu_abs(const int n, const std::complex<Dtype>* a, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_exp(const int n, const Dtype* a, Dtype* y);
@@ -216,6 +222,9 @@ void caffe_gpu_log(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_powx(const int n, const Dtype* a, const Dtype b, Dtype* y);
+
+template <typename Dtype>
+void caffe_gpu_powx(const int n, const std::complex<Dtype>* a, const Dtype b, std::complex<Dtype>* y);
 
 template <typename Dtype>
 void caffe_gpu_sqrt(const int n, const Dtype* a, Dtype* y);
@@ -240,7 +249,7 @@ template <typename Dtype>
 void caffe_gpu_rng_bernoulli(const int n, const Dtype p, int* r);
 
 template <typename Dtype>
-void caffe_gpu_dot(const int n, const Dtype* x, const Dtype* y, Dtype* out);
+void caffe_gpu_dot(const int n, const Dtype* x, const Dtype* y, Dtype* out, const bool conj_x = true);
 
 template <typename Dtype>
 void caffe_gpu_asum(const int n, const Dtype* x, Dtype* y);
@@ -256,6 +265,18 @@ void caffe_gpu_fabs(const int n, const Dtype* x, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_scale(const int n, const Dtype alpha, const Dtype *x, Dtype* y);
+
+template <typename Dtype>
+void caffe_gpu_conj(const int n, const Dtype* x, Dtype* y);
+
+__device__ void caffe_gpu_complex_pow(const cuComplex a, const float alpha, cuComplex &b);
+__device__ void caffe_gpu_complex_pow(const cuDoubleComplex a, const double alpha, cuDoubleComplex &b);
+
+__device__ void caffe_gpu_complex_exp(const cuComplex a, cuComplex &b);
+__device__ void caffe_gpu_complex_exp(const cuDoubleComplex a, cuDoubleComplex &b);
+
+template <typename Dtype>
+void caffe_gpu_print(const int N, const Dtype* Y);
 
 #define DEFINE_AND_INSTANTIATE_GPU_UNARY_FUNC(name, operation) \
 template<typename Dtype> \

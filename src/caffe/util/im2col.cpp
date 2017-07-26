@@ -34,7 +34,7 @@ void im2col_cpu(const Dtype* data_im, const int channels,
         for (int output_rows = output_h; output_rows; output_rows--) {
           if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {
             for (int output_cols = output_w; output_cols; output_cols--) {
-              *(data_col++) = 0;
+              *(data_col++) = Dtype(0);
             }
           } else {
             int input_col = -pad_w + kernel_col * dilation_w;
@@ -42,7 +42,7 @@ void im2col_cpu(const Dtype* data_im, const int channels,
               if (is_a_ge_zero_and_a_lt_b(input_col, width)) {
                 *(data_col++) = data_im[input_row * width + input_col];
               } else {
-                *(data_col++) = 0;
+                *(data_col++) = Dtype(0);
               }
               input_col += stride_w;
             }
@@ -65,6 +65,16 @@ template void im2col_cpu<double>(const double* data_im, const int channels,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, const int dilation_h, const int dilation_w,
     double* data_col);
+template void im2col_cpu<std::complex<float> >(const std::complex<float>* data_im, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, const int dilation_h, const int dilation_w,
+    std::complex<float>* data_col);
+template void im2col_cpu<std::complex<double> >(const std::complex<double>* data_im, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, const int dilation_h, const int dilation_w,
+    std::complex<double>* data_col);
 
 template <typename Dtype>
 inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
@@ -112,7 +122,7 @@ inline void im2col_nd_core_cpu(const Dtype* data_input, const bool im2col,
       }
       if (im2col) {
         if (is_padding) {
-          data_output[index_col] = 0;
+          data_output[index_col] = Dtype(0);
         } else {
           data_output[index_col] = data_input[index_im];
         }
@@ -158,6 +168,16 @@ template void im2col_nd_cpu<double>(const double* data_im,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     const int* dilation, double* data_col);
+template void im2col_nd_cpu<std::complex<float> >(const std::complex<float>* data_im,
+    const int num_spatial_axes,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+    const int* dilation, std::complex<float>* data_col);
+template void im2col_nd_cpu<std::complex<double> >(const std::complex<double>* data_im,
+    const int num_spatial_axes,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+    const int* dilation, std::complex<double>* data_col);
 
 template <typename Dtype>
 void col2im_cpu(const Dtype* data_col, const int channels,
@@ -207,6 +227,16 @@ template void col2im_cpu<double>(const double* data_col, const int channels,
     const int pad_h, const int pad_w, const int stride_h,
     const int stride_w, const int dilation_h, const int dilation_w,
     double* data_im);
+template void col2im_cpu<std::complex<float> >(const std::complex<float>* data_col, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, const int dilation_h, const int dilation_w,
+    std::complex<float>* data_im);
+template void col2im_cpu<std::complex<double> >(const std::complex<double>* data_col, const int channels,
+    const int height, const int width, const int kernel_h, const int kernel_w,
+    const int pad_h, const int pad_w, const int stride_h,
+    const int stride_w, const int dilation_h, const int dilation_w,
+    std::complex<double>* data_im);
 
 template <typename Dtype>
 void col2im_nd_cpu(const Dtype* data_col, const int num_spatial_axes,
@@ -229,6 +259,16 @@ template void col2im_nd_cpu<double>(const double* data_col,
     const int* im_shape, const int* col_shape,
     const int* kernel_shape, const int* pad, const int* stride,
     const int* dilation, double* data_im);
+template void col2im_nd_cpu<std::complex<float> >(const std::complex<float>* data_col,
+    const int num_spatial_axes,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+    const int* dilation, std::complex<float>* data_im);
+template void col2im_nd_cpu<std::complex<double> >(const std::complex<double>* data_col,
+    const int num_spatial_axes,
+    const int* im_shape, const int* col_shape,
+    const int* kernel_shape, const int* pad, const int* stride,
+    const int* dilation, std::complex<double>* data_im);
 
 
 }  // namespace caffe

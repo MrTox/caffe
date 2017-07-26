@@ -108,9 +108,9 @@ class PositiveUnitballFiller : public Filler<Dtype> {
     caffe_rng_uniform<Dtype>(blob->count(), 0, 1, blob->mutable_cpu_data());
     // We expect the filler to not be called very frequently, so we will
     // just use a simple implementation
-    int dim = blob->count() / blob->num();
+    int dim = blob->count() / blob->shape(0);
     CHECK(dim);
-    for (int i = 0; i < blob->num(); ++i) {
+    for (int i = 0; i < blob->shape(0); ++i) {
       Dtype sum = 0;
       for (int j = 0; j < dim; ++j) {
         sum += data[i * dim + j];
@@ -147,8 +147,8 @@ class XavierFiller : public Filler<Dtype> {
       : Filler<Dtype>(param) {}
   virtual void Fill(Blob<Dtype>* blob) {
     CHECK(blob->count());
-    int fan_in = blob->count() / blob->num();
-    int fan_out = blob->count() / blob->channels();
+    int fan_in = blob->count() / blob->shape(0);
+    int fan_out = blob->count() / blob->shape(1);
     Dtype n = fan_in;  // default to fan_in
     if (this->filler_param_.variance_norm() ==
         FillerParameter_VarianceNorm_AVERAGE) {
@@ -189,8 +189,8 @@ class MSRAFiller : public Filler<Dtype> {
       : Filler<Dtype>(param) {}
   virtual void Fill(Blob<Dtype>* blob) {
     CHECK(blob->count());
-    int fan_in = blob->count() / blob->num();
-    int fan_out = blob->count() / blob->channels();
+    int fan_in = blob->count() / blob->shape(0);
+    int fan_out = blob->count() / blob->shape(1);
     Dtype n = fan_in;  // default to fan_in
     if (this->filler_param_.variance_norm() ==
         FillerParameter_VarianceNorm_AVERAGE) {
@@ -262,6 +262,32 @@ class BilinearFiller : public Filler<Dtype> {
 };
 
 /**
+ * @brief Fill the first half of the blob with -1 and the second half with 1.
+ *
+ * Note: does not pay any attention to dimensions.
+ */
+template <typename Dtype>
+class DiffFiller : public Filler<Dtype> {
+ public:
+  explicit DiffFiller(const FillerParameter& param)
+      : Filler<Dtype>(param) {}
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
+    int center = floor(blob->count() / 2.);
+    for (int i = 0; i < blob->count(); ++i) {
+      if (i < center) {
+        data[i] = -1;
+      }
+      else {
+        data[i] = 1;
+      }
+    }
+    CHECK_EQ(this->filler_param_.sparse(), -1)
+         << "Sparsity not supported by this Filler.";
+  }
+};
+
+/**
  * @brief Get a specific filler from the specification given in FillerParameter.
  *
  * Ideally this would be replaced by a factory pattern, but we will leave it
@@ -284,6 +310,8 @@ Filler<Dtype>* GetFiller(const FillerParameter& param) {
     return new MSRAFiller<Dtype>(param);
   } else if (type == "bilinear") {
     return new BilinearFiller<Dtype>(param);
+  } else if (type == "diff") {
+    return new DiffFiller<Dtype>(param);
   } else {
     CHECK(false) << "Unknown filler name: " << param.type();
   }
