@@ -1,0 +1,164 @@
+name: "MNIST_Complex"
+
+layer {
+  name: "mnist"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"  
+  include: { 
+    phase: TRAIN 
+  }
+  hdf5_data_param {
+    source: "examples/complex/mnist_train_data.txt"
+    batch_size: 100
+    shuffle: true
+  }
+}
+
+layer {
+  name: "mnist"
+  type: "HDF5Data"
+  top: "data"
+  top: "label"  
+  include: { 
+    phase: TEST 
+  }
+  hdf5_data_param {
+    source: "examples/complex/mnist_test_data.txt"
+    batch_size: 100
+    shuffle: true
+  }
+}
+
+layer {
+  name: "conv1"
+  type: "ComplexConvolution"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  convolution_param {
+    num_output: 20
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  bottom: "data"
+  top: "conv1"
+}
+
+layer {
+  name: "pool1"
+  type: "ComplexPooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+  bottom: "conv1"
+  top: "pool1"
+}
+
+layer {
+  name: "conv2"
+  type: "ComplexConvolution"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  convolution_param {
+    num_output: 50
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  bottom: "pool1"
+  top: "conv2"
+}
+
+layer {
+  name: "pool2"
+  type: "ComplexPooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+  bottom: "conv2"
+  top: "pool2"
+}
+
+layer {
+  name: "ip1"
+  type: "ComplexInnerProduct"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  bottom: "pool2"
+  top: "ip1"
+}
+
+layer {
+  name: "relu1"
+  type: "ComplexCardioid"
+  bottom: "ip1"
+  top: "ip1"
+}
+
+layer {
+  name: "ip2"
+  type: "ComplexInnerProduct"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  inner_product_param {
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  bottom: "ip1"
+  top: "ip2"
+}
+
+layer {
+  name: "mag1"
+  type: "ComplexMagnitude"
+  bottom: "ip2"
+  top: "mag1"
+}
+
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "mag1"
+  bottom: "label"
+  include {
+    phase: TEST
+  }
+  top: "accuracy"
+}
+
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "mag1"
+  bottom: "label"
+  top: "loss"
+}

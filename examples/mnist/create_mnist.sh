@@ -5,7 +5,7 @@ set -e
 
 EXAMPLE=examples/mnist
 DATA=data/mnist
-BUILD=build/examples/mnist
+BUILD=/opt/caffe/build/examples/mnist
 
 BACKEND="lmdb"
 
