@@ -70,6 +70,8 @@ models/*
 *.binaryproto
 *leveldb
 *lmdb
+*.h5
+examples/complex/*.txt
 
 # build, distribute, and bins (+ python proto bindings)
 build
