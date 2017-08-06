@@ -47,6 +47,9 @@
 # PyCharm files
 .idea
 
+# Visual Studio Code files
+.vscode
+
 # OSX dir files
 .DS_Store
 
@@ -67,6 +70,8 @@ models/*
 *.binaryproto
 *leveldb
 *lmdb
+*.h5
+examples/complex/*.txt
 
 # build, distribute, and bins (+ python proto bindings)
 build
@@ -81,6 +86,7 @@ cmake_build
 
 # Generated documentation
 docs/_site
+docs/_includes
 docs/gathered
 _site
 doxygen

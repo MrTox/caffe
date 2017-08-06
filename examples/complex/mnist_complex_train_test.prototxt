@@ -1,0 +1,200 @@
+name: "MNIST_Complex"
+
+layer {
+  name: "mnist"
+  type: "HDF5Data"
+  top: "data"
+  top: "labels"
+  include: {
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "examples/complex/mnist_train_data.txt"
+    batch_size: 100
+    shuffle: true
+  }
+}
+
+layer {
+  name: "mnist"
+  type: "HDF5Data"
+  top: "data"
+  top: "labels"
+  include: {
+    phase: TEST
+  }
+  hdf5_data_param {
+    source: "examples/complex/mnist_test_data.txt"
+    batch_size: 100
+    shuffle: true
+  }
+}
+
+layer {
+  name: "conv1"
+  type: "ComplexConvolution"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  convolution_param {
+    num_output: 20
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+  bottom: "data"
+  top: "conv1"
+}
+
+layer {
+  name: "bn1"
+  type: "ComplexBatchNorm"
+  bottom: "conv1"
+  top: "bn1"
+}
+
+layer {
+  name: "pool1"
+  type: "ComplexPooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+  bottom: "bn1"
+  top: "pool1"
+}
+
+layer {
+  name: "conv2"
+  type: "ComplexConvolution"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  convolution_param {
+    num_output: 50
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+  bottom: "pool1"
+  top: "conv2"
+}
+
+layer {
+  name: "bn2"
+  type: "ComplexBatchNorm"
+  bottom: "conv2"
+  top: "bn2"
+}
+
+layer {
+  name: "act1"
+  type: "ComplexCardioid"
+  bottom: "bn2"
+  top: "bn2"
+}
+
+layer {
+  name: "pool2"
+  type: "ComplexPooling"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+  bottom: "bn2"
+  top: "pool2"
+}
+
+layer {
+  name: "fc3"
+  type: "ComplexInnerProduct"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+  bottom: "pool2"
+  top: "fc3"
+}
+
+layer {
+  name: "act3"
+  type: "ComplexCardioid"
+  bottom: "fc3"
+  top: "fc3"
+}
+
+layer {
+  name: "drop3"
+  type: "ComplexDropout"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+  bottom: "fc3"
+  top: "fc3"
+}
+
+layer {
+  name: "fc4"
+  type: "ComplexInnerProduct"
+  param { lr_mult: 1 }
+  param { lr_mult: 2 }
+  inner_product_param {
+    num_output: 10
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+  bottom: "fc3"
+  top: "fc4"
+}
+
+layer {
+  name: "mag4"
+  type: "ComplexMagnitude"
+  bottom: "fc4"
+  top: "mag4"
+}
+
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "mag4"
+  bottom: "labels"
+  top: "accuracy"
+}
+
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "mag4"
+  bottom: "labels"
+  top: "loss"
+}
+
