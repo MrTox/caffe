@@ -22,9 +22,7 @@ namespace caffe {
  * variance statistics via a running average, which is then used at test
  * time to allow deterministic outputs for each input.  You can manually
  * toggle whether the network is accumulating or using the statistics via the
- * use_global_stats option.  IMPORTANT: for this feature to work, you MUST
- * set the learning rate to zero for all three parameter blobs, i.e.,
- * param {lr_mult: 0} three times in the layer definition.
+ * use_global_stats option.
  *
  * Note that the original paper also included a per-channel learned bias and
  * scaling factor.  It is possible (though a bit cumbersome) to implement
