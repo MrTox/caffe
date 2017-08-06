@@ -4,7 +4,7 @@ layer {
   name: "mnist"
   type: "HDF5Data"
   top: "data"
-  top: "label"
+  top: "labels"
   include: {
     phase: TRAIN
   }
@@ -19,7 +19,7 @@ layer {
   name: "mnist"
   type: "HDF5Data"
   top: "data"
-  top: "label"
+  top: "labels"
   include: {
     phase: TEST
   }
@@ -40,7 +40,8 @@ layer {
     kernel_size: 5
     stride: 1
     weight_filler {
-      type: "xavier"
+      type: "gaussian"
+      std: 0.01
     }
     bias_filler {
       type: "constant"
@@ -99,7 +100,7 @@ layer {
 }
 
 layer {
-  name: "relu1"
+  name: "act1"
   type: "ComplexCardioid"
   bottom: "bn2"
   top: "bn2"
@@ -118,7 +119,7 @@ layer {
 }
 
 layer {
-  name: "ip1"
+  name: "fc3"
   type: "ComplexInnerProduct"
   param { lr_mult: 1 }
   param { lr_mult: 2 }
@@ -134,28 +135,28 @@ layer {
     }
   }
   bottom: "pool2"
-  top: "ip1"
+  top: "fc3"
 }
 
 layer {
-  name: "relu2"
+  name: "act3"
   type: "ComplexCardioid"
-  bottom: "ip1"
-  top: "ip1"
+  bottom: "fc3"
+  top: "fc3"
 }
 
 layer {
-  name: "drop1"
+  name: "drop3"
   type: "ComplexDropout"
   dropout_param {
     dropout_ratio: 0.5
   }
-  bottom: "ip1"
-  top: "ip1"
+  bottom: "fc3"
+  top: "fc3"
 }
 
 layer {
-  name: "ip2"
+  name: "fc4"
   type: "ComplexInnerProduct"
   param { lr_mult: 1 }
   param { lr_mult: 2 }
@@ -170,32 +171,30 @@ layer {
       value: 0
     }
   }
-  bottom: "ip1"
-  top: "ip2"
+  bottom: "fc3"
+  top: "fc4"
 }
 
 layer {
-  name: "mag1"
+  name: "mag4"
   type: "ComplexMagnitude"
-  bottom: "ip2"
-  top: "mag1"
+  bottom: "fc4"
+  top: "mag4"
 }
 
 layer {
   name: "accuracy"
   type: "Accuracy"
-  bottom: "mag1"
-  bottom: "label"
-  include {
-    phase: TEST
-  }
+  bottom: "mag4"
+  bottom: "labels"
   top: "accuracy"
 }
 
 layer {
   name: "loss"
   type: "SoftmaxWithLoss"
-  bottom: "mag1"
-  bottom: "label"
+  bottom: "mag4"
+  bottom: "labels"
   top: "loss"
 }
+

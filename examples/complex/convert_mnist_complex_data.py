@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import os, struct
 from array import array as pyarray
 import sys
@@ -67,7 +65,7 @@ def main(argv):
     filename = fout + ".h5"
     hfile = h5py.File(filename, 'w')
     hfile.create_dataset('data', data=img_z)
-    hfile.create_dataset('label', data=lbls)
+    hfile.create_dataset('labels', data=lbls)
     hfile.close()
 
     with open(fout + ".txt", "w") as file:
